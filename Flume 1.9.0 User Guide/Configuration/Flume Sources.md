@@ -396,3 +396,281 @@ maxBatchDurationMillis |  1000	|   Maximum number of milliseconds to wait before
 	a1.sources.r1.maxBatchDurationMillis = 200
 
 ## 8、Kafka Source
+
+> Kafka Source is an Apache Kafka consumer that reads messages from Kafka topics. If you have multiple Kafka sources running, you can configure them with the same Consumer Group so each will read a unique set of partitions for the topics. This currently supports Kafka server releases 0.10.1.0 or higher. Testing was done up to 2.0.1 that was the highest avilable version at the time of the release.
+
+Kafka Source 是一个 Apache Kafka 消费者，它从 Kafka topics 中读取消息。如果你有多个 Kafka sources 正在运行，你可以将它们配置成相同的消费组，这样每个 sources 将读取 topics 的一组唯一的分区。
+
+目前支持 Kafka 服务器版本 0.10.1.0 或更高版本。测试一直进行到 2.0.1，这是发行时的最高可用版本。
+
+Property Name             |  Default	|   Description
+---|:---|:---
+**channels**	          |     –	    |  
+**type**	              |     –	    |   The component type name, needs to be `org.apache.flume.source.kafka.KafkaSource`【组件类型名称，需要是`org.apache.flume.source.kafka.KafkaSource`】
+**kafka.bootstrap.servers**|     –	    |   List of brokers in the Kafka cluster used by the source【这个source使用的kafka集群中的brokers列表】
+kafka.consumer.group.id	  |   flume	    |   Unique identified of consumer group. Setting the same id in multiple sources or agents indicates that they are part of the same consumer group【消费者组的唯一标识。在多个source和agents中设置相同的id，表示它们是相同消费者组的一部分】
+**kafka.topics**	      |     –	    |   Comma-separated list of topics the kafka consumer will read messages from.【kafka消费者将从这个topics的列表中读取，逗号分隔。】
+**kafka.topics.regex**	  |     –	    |   Regex that defines set of topics the source is subscribed on. This property has higher priority than `kafka.topics` and overrides `kafka.topics` if exists.【定义了source订阅的topics集合的正则。这个属性具有比`kafka.topics`更高的优先级，覆盖`kafka.topics`】
+batchSize	              |    1000	    |   Maximum number of messages written to Channel in one batch【在一个批次中，写入到channel中的消息的最大数量】
+batchDurationMillis	      |    1000	    |   Maximum time (in ms) before a batch will be written to Channel The batch will be written whenever the first of size and time will be reached.【一个批次写入channel前的最大时间(单位为ms)。无论是大小还是时间首先达到，批次就会被写入。】
+backoffSleepIncrement	  |    1000	    |   Initial and incremental wait time that is triggered when a Kafka Topic appears to be empty. Wait period will reduce aggressive pinging of an empty Kafka Topic. One second is ideal for ingestion use cases but a lower value may be required for low latency operations with interceptors.【Kafka Topic为空时，触发的初始等待时间和增量等待时间。等待周期将减少对空Kafka Topic的频繁ping。对于接收用例，1秒是理想的，但是对于使用拦截器的低延迟操作，可能需要更低的值。】
+maxBackoffSleep	          |    5000	    |   Maximum wait time that is triggered when a Kafka Topic appears to be empty. Five seconds is ideal for ingestion use cases but a lower value may be required for low latency operations with interceptors.【Kafka Topic为空时，触发的最大等待时间。对于接收用例，5秒是理想的，但是对于使用拦截器的低延迟操作，可能需要更低的值。】
+useFlumeEventFormat	      |    false	|   By default events are taken as bytes from the Kafka topic directly into the event body. Set to true to read events as the Flume Avro binary format. Used in conjunction with the same property on the KafkaSink or with the parseAsFlumeEvent property on the Kafka Channel this will preserve any Flume headers sent on the producing side.【默认情况下，事件以字节的形式从Kafka topic直接进入事件体。设置为true，则以Flume Avro二进制格式读取事件。与KafkaSink上的相同属性或Kafka Channel上的parseAsFlumeEvent属性一起使用，这将保留在生产端发送的任何Flume headers信息。】
+setTopicHeader	          |     true	|   When set to true, stores the topic of the retrieved message into a header, defined by the `topicHeader` property.【当设置为true时将接收消息的topic存入到一个header，默认由`topicHeader`属性定义。】
+topicHeader	              |     topic	|   Defines the name of the header in which to store the name of the topic the message was received from, if the `setTopicHeader` property is set to `true`. Care should be taken if combining with the Kafka Sink `topicHeader` property so as to avoid sending the message back to the same topic in a loop.【当`setTopicHeader`属性设置为true，定义的header的名称，在这个header中存储了接收到的消息的topic的名称。如果结合使用Kafka Sink `topicHeader`属性，应该小心避免在循环中将消息发送回同一个topic。】
+kafka.consumer.security.protocol |	PLAINTEXT	|  Set to SASL_PLAINTEXT, SASL_SSL or SSL if writing to Kafka using some level of security. See below for additional info on secure setup.【如果写入到的kafka使用了一些安全级别，设为SASL_PLAINTEXT、SASL_SSL或SSL】
+more consumer security props |	 	|  If using SASL_PLAINTEXT, SASL_SSL or SSL refer to Kafka security for additional properties that need to be set on consumer.【如果设置的SASL_PLAINTEXT、SASL_SSL或SSL引用了kafka安全的一些属性，需要在消费者上设置。】
+Other Kafka Consumer Properties |	–	|  These properties are used to configure the Kafka Consumer. Any consumer property supported by Kafka can be used. The only requirement is to prepend the property name with the prefix `kafka.consumer`. For example: `kafka.consumer.auto.offset.reset`【这些属性用来配置kafka消费者。Kafka支持的任何的消费者属性可以被使用。仅有的要求是属性以`kafka.consumer`为前缀。】
+
+> Note:The Kafka Source overrides two Kafka consumer parameters: auto.commit.enable is set to “false” by the source and every batch is committed. Kafka source guarantees at least once strategy of messages retrieval. The duplicates can be present when the source starts. The Kafka Source also provides defaults for the key.deserializer(org.apache.kafka.common.serialization.StringSerializer) and value.deserializer(org.apache.kafka.common.serialization.ByteArraySerializer). Modification of these parameters is not recommended.
+
+注意：Kafka Source 覆盖了两个 Kafka 消费者参数:`auto.commit.enable` 被 source 设置为 false，并且每个批次都被提交。
+
+Kafka source 保证了至少一次的消息检索策略。
+
+副本可以在 source 启动时出现。
+
+Kafka Source 也为 `key.deserializer`((org.apache.kafka.common.serialization.StringSerializer)和 `value.deserializer`(org.apache.kafka.common.serialization.ByteArraySerializer)提供了默认值。不建议修改这些参数。
+
+> Deprecated Properties
+
+弃用属性：
+
+Property Name             |  Default	|   Description
+---|:---|:---
+topic	                  |     –	    |  Use kafka.topics
+groupId	                  |    flume	|  Use kafka.consumer.group.id
+zookeeperConnect	      |     –	    |  Is no longer supported by kafka consumer client since 0.9.x. Use kafka.bootstrap.servers to establish connection with kafka cluster
+migrateZookeeperOffsets   |    true	    |  When no Kafka stored offset is found, look up the offsets in Zookeeper and commit them to Kafka. This should be true to support seamless Kafka client migration from older versions of Flume. Once migrated this can be set to false, though that should generally not be required. If no Zookeeper offset is found, the Kafka configuration kafka.consumer.auto.offset.reset defines how offsets are handled. Check Kafka documentation for details
+
+> Example for topic subscription by comma-separated topic list.
+
+逗号分隔的订阅的 topic 列表：
+
+	tier1.sources.source1.type = org.apache.flume.source.kafka.KafkaSource
+	tier1.sources.source1.channels = channel1
+	tier1.sources.source1.batchSize = 5000
+	tier1.sources.source1.batchDurationMillis = 2000
+	tier1.sources.source1.kafka.bootstrap.servers = localhost:9092
+	tier1.sources.source1.kafka.topics = test1, test2
+	tier1.sources.source1.kafka.consumer.group.id = custom.g.id
+
+> Example for topic subscription by regex
+
+正则表示的订阅的 topic 
+
+	tier1.sources.source1.type = org.apache.flume.source.kafka.KafkaSource
+	tier1.sources.source1.channels = channel1
+	tier1.sources.source1.kafka.bootstrap.servers = localhost:9092
+	tier1.sources.source1.kafka.topics.regex = ^topic[0-9]$
+	# the default kafka.consumer.group.id=flume is used
+
+### 8.1、Security and Kafka Source:
+
+> Secure authentication as well as data encryption is supported on the communication channel between Flume and Kafka. For secure authentication SASL/GSSAPI (Kerberos V5) or SSL (even though the parameter is named SSL, the actual protocol is a TLS implementation) can be used from Kafka version 0.9.0.
+
+Flume 和 Kafka 之间的通信通道支持安全认证和数据加密。
+
+对于安全身份验证，可以在 Kafka 0.9.0 版本中使用 SASL/GSSAPI(Kerberos V5 )或 SSL(即使参数名为 SSL，实际的协议是 TLS 实现)。
+
+> As of now data encryption is solely provided by SSL/TLS.
+
+目前数据加密仅由 SSL/TLS 提供。
+
+> Setting kafka.consumer.security.protocol to any of the following value means:
+
+设置 `kafka.consumer.security.protocol` 为以下的任何一个值:
+
+- SASL_PLAINTEXT - Kerberos or plaintext authentication with no data encryption
+- SASL_SSL - Kerberos or plaintext authentication with data encryption
+- SSL - TLS based encryption with optional authentication.
+
+> Warning：There is a performance degradation when SSL is enabled, the magnitude of which depends on the CPU type and the JVM implementation. Reference: [Kafka security overview](http://kafka.apache.org/documentation#security_overview) and the jira for tracking this issue: [KAFKA-2561](https://issues.apache.org/jira/browse/KAFKA-2561)
+
+当启用 SSL 时，性能会下降，下降程度取决于 CPU 类型和 JVM 实现。
+
+### 8.2、TLS and Kafka Source:
+
+> Please read the steps described in [Configuring Kafka Clients SSL](http://kafka.apache.org/documentation#security_configclients) to learn about additional configuration settings for fine tuning for example any of the following: security provider, cipher suites, enabled protocols, truststore or keystore types.
+
+请阅读 Configuring Kafka Clients SSL 中描述的步骤，以了解额外的配置调调，例如以下的任何一个:安全提供者，加密套件，启用协议，信任存储或密钥存储类型。
+
+> Example configuration with server side authentication and data encryption.
+
+服务器端身份认证和数据加密的配置示例。
+
+	a1.sources.source1.type = org.apache.flume.source.kafka.KafkaSource
+	a1.sources.source1.kafka.bootstrap.servers = kafka-1:9093,kafka-2:9093,kafka-3:9093
+	a1.sources.source1.kafka.topics = mytopic
+	a1.sources.source1.kafka.consumer.group.id = flume-consumer
+	a1.sources.source1.kafka.consumer.security.protocol = SSL
+	# optional, the global truststore can be used alternatively
+	a1.sources.source1.kafka.consumer.ssl.truststore.location=/path/to/truststore.jks
+	a1.sources.source1.kafka.consumer.ssl.truststore.password=<password to access the truststore>
+
+> Specyfing the truststore is optional here, the global truststore can be used instead. For more details about the global SSL setup, see the [SSL/TLS](http://flume.apache.org/FlumeUserGuide.html#ssl-tls-support) support section.
+
+在这里指定的 truststore 是可选的，可以使用全局 truststore。有关全局 SSL 设置的更多细节，请参见 SSL/TLS 支持部分。
+
+> Note: By default the property ssl.endpoint.identification.algorithm is not defined, so hostname verification is not performed. In order to enable hostname verification, set the following properties
+
+注意：默认情况下，不定义 `ssl.endpoint.identification.algorithm` 属性，所以不执行主机名验证。
+
+为了启用主机名验证，设置以下属性：
+
+	a1.sources.source1.kafka.consumer.ssl.endpoint.identification.algorithm=HTTPS
+
+> Once enabled, clients will verify the server’s fully qualified domain name (FQDN) against one of the following two fields:
+
+一旦启用，客户端将根据以下两个字段之一验证服务器的完全限定域名(FQDN):
+
+1.Common Name (CN) [https://tools.ietf.org/html/rfc6125#section-2.3](https://tools.ietf.org/html/rfc6125#section-2.3)
+
+2.Subject Alternative Name (SAN) [https://tools.ietf.org/html/rfc5280#section-4.2.1.6](https://tools.ietf.org/html/rfc5280#section-4.2.1.6)
+
+> If client side authentication is also required then additionally the following needs to be added to Flume agent configuration or the global SSL setup can be used (see [SSL/TLS support](http://flume.apache.org/FlumeUserGuide.html#ssl-tls-support) section). Each Flume agent has to have its client certificate which has to be trusted by Kafka brokers either individually or by their signature chain. Common example is to sign each client certificate by a single Root CA which in turn is trusted by Kafka brokers.
+
+如果还需要客户端身份验证，那么还需要将以下内容添加到 Flume agent 配置中，或者可以使用全局 SSL 设置。
+
+每个 Flume agent 必须有自己的客户端证书，该证书必须被 Kafka brokers 单独或通过其签名链信任。
+
+常见的例子是通过一个被 Kafka brokers 信任的 Root CA 对每个客户端证书进行签名。
+
+	# optional, the global keystore can be used alternatively
+	a1.sources.source1.kafka.consumer.ssl.keystore.location=/path/to/client.keystore.jks
+	a1.sources.source1.kafka.consumer.ssl.keystore.password=<password to access the keystore>
+
+> If keystore and key use different password protection then ssl.key.password property will provide the required additional secret for both consumer keystores:
+
+如果 keystore 和 key 使用不同的密码保护，那么 `ssl.key.password` 属性将为两个消费者 keystores 提供所需的额外加密:
+
+	a1.sources.source1.kafka.consumer.ssl.key.password=<password to access the key>
+
+### 8.3、Kerberos and Kafka Source:
+
+> To use Kafka source with a Kafka cluster secured with Kerberos, set the consumer.security.protocol properties noted above for consumer. The Kerberos keytab and principal to be used with Kafka brokers is specified in a JAAS file’s “KafkaClient” section. “Client” section describes the Zookeeper connection if needed. See [Kafka doc](http://kafka.apache.org/documentation.html#security_sasl_clientconfig) for information on the JAAS file contents. The location of this JAAS file and optionally the system wide kerberos configuration can be specified via JAVA_OPTS in flume-env.sh:
+
+为了使用 Kerberos 安全保护的 Kafka 集群的 Kafka source，为消费者设置`consumer.security.protocol` 属性。
+
+与 Kafka broker 一起使用的 Kerberos keytab 和 principal 是在 JAAS 文件的 “kafkclient” 部分指定的。如果需要，“Client” 部分描述 Zookeeper 连接。
+
+可以通过 flume-env.sh 中的 JAVA_OPTS 指定这个 JAAS 文件的位置以及系统范围的 kerberos 配置(可选):
+
+	JAVA_OPTS="$JAVA_OPTS -Djava.security.krb5.conf=/path/to/krb5.conf"
+	JAVA_OPTS="$JAVA_OPTS -Djava.security.auth.login.config=/path/to/flume_jaas.conf"
+
+> Example secure configuration using SASL_PLAINTEXT:
+
+使用 `SASL_PLAINTEXT` 的安全配置示例：
+
+	a1.sources.source1.type = org.apache.flume.source.kafka.KafkaSource
+	a1.sources.source1.kafka.bootstrap.servers = kafka-1:9093,kafka-2:9093,kafka-3:9093
+	a1.sources.source1.kafka.topics = mytopic
+	a1.sources.source1.kafka.consumer.group.id = flume-consumer
+	a1.sources.source1.kafka.consumer.security.protocol = SASL_PLAINTEXT
+	a1.sources.source1.kafka.consumer.sasl.mechanism = GSSAPI
+	a1.sources.source1.kafka.consumer.sasl.kerberos.service.name = kafka
+
+> Example secure configuration using SASL_SSL:
+
+使用 `SASL_SSL` 的安全配置示例：
+
+	a1.sources.source1.type = org.apache.flume.source.kafka.KafkaSource
+	a1.sources.source1.kafka.bootstrap.servers = kafka-1:9093,kafka-2:9093,kafka-3:9093
+	a1.sources.source1.kafka.topics = mytopic
+	a1.sources.source1.kafka.consumer.group.id = flume-consumer
+	a1.sources.source1.kafka.consumer.security.protocol = SASL_SSL
+	a1.sources.source1.kafka.consumer.sasl.mechanism = GSSAPI
+	a1.sources.source1.kafka.consumer.sasl.kerberos.service.name = kafka
+	# optional, the global truststore can be used alternatively
+	a1.sources.source1.kafka.consumer.ssl.truststore.location=/path/to/truststore.jks
+	a1.sources.source1.kafka.consumer.ssl.truststore.password=<password to access the truststore>
+
+> Sample JAAS file. For reference of its content please see client config sections of the desired authentication mechanism (GSSAPI/PLAIN) in Kafka documentation of [SASL configuration](http://kafka.apache.org/documentation#security_sasl_clientconfig). Since the Kafka Source may also connect to Zookeeper for offset migration, the “Client” section was also added to this example. This won’t be needed unless you require offset migration, or you require this section for other secure components. Also please make sure that the operating system user of the Flume processes has read privileges on the jaas and keytab files.
+
+JAAS 文件示例。
+
+因为 Kafka Source 也可以连接到 Zookeeper 进行偏移量迁移，“Client” 部分也被添加到这个例子中。除非需要偏移量迁移，或者其他安全组件需要使用本节，否则不需要这样做。
+
+另外，请确保 Flume 进程的操作系统用户对 jaas 和 keytab 文件有读取权限。
+
+	Client {
+	  com.sun.security.auth.module.Krb5LoginModule required
+	  useKeyTab=true
+	  storeKey=true
+	  keyTab="/path/to/keytabs/flume.keytab"
+	  principal="flume/flumehost1.example.com@YOURKERBEROSREALM";
+	};
+
+	KafkaClient {
+	  com.sun.security.auth.module.Krb5LoginModule required
+	  useKeyTab=true
+	  storeKey=true
+	  keyTab="/path/to/keytabs/flume.keytab"
+	  principal="flume/flumehost1.example.com@YOURKERBEROSREALM";
+	};
+
+## 9、NetCat TCP Source
+
+> A netcat-like source that listens on a given port and turns each line of text into an event. Acts like `nc -k -l [host] [port]`. In other words, it opens a specified port and listens for data. The expectation is that the supplied data is newline separated text. Each line of text is turned into a Flume event and sent via the connected channel.
+
+一种类似 netcat 的 source，它监听给定端口，并将文本的每行转换为一个 event，行为像 `nc -k -l [host] [port]`。换句话说，它打开一个指定的端口，并监听数据。
+
+期望提供的数据是换行符分隔的文本。文本的每一行都被转换成一个 Flume event，并通过连接的 channel 发送。
+
+必需的属性以粗体显示。
+
+> Required properties are in bold.
+
+Property Name   |  Default	|   Description
+---|:---|:---
+**channels**	|     –	    |
+**type**	    |     –	    |   The component type name, needs to be `netcat`【组件类型的名称，需要是`netcat`】
+**bind**	    |     –	    |   Host name or IP address to bind to【绑定的主机名或ip地址】
+**port**	    |     –	    |   Port # to bind to【绑定的端口】
+max-line-length	|    512	|   Max line length per event body (in bytes)【每个事件主机的最大行长度（字节）】
+ack-every-event	|    true	|   Respond with an “OK” for every event received【是否对每个接收的事件以“OK”响应】
+selector.type	|replicating|	replicating or multiplexing
+selector.*	 	|           |   Depends on the selector.type value
+interceptors	|     –	    |   Space-separated list of interceptors
+interceptors.*	|           |	 
+
+> Example for agent named a1:
+
+	a1.sources = r1
+	a1.channels = c1
+	a1.sources.r1.type = netcat
+	a1.sources.r1.bind = 0.0.0.0
+	a1.sources.r1.port = 6666
+	a1.sources.r1.channels = c1
+
+## 10、NetCat UDP Source
+
+> As per the original Netcat (TCP) source, this source that listens on a given port and turns each line of text into an event and sent via the connected channel. Acts like `nc -u -k -l [host] [port]`.Required properties are in bold.
+
+根据原始的 Netcat (TCP) source，该 source 监听给定端口，并将文本的每行转换为 event，并通过连接的 channel 发送。行为类似`nc -u -k -l [host] [port]`。
+
+必需的属性以粗体显示。
+
+Property Name   |  Default	|   Description
+---|:---|:---
+**channels**    |     –	    |
+**type**	    |     –	    |   The component type name, needs to be `netcatudp`【组件类型的名称，需要是`netcatudp`】
+**bind**	    |     –	    |   Host name or IP address to bind to【绑定的主机名或ip地址】
+**port**	    |     –	    |   Port # to bind to【绑定的端口】
+remoteAddressHeader|  –	    | 
+selector.type	|replicating|	replicating or multiplexing
+selector.*	 	|           |   Depends on the selector.type value
+interceptors	|     –	    |   Space-separated list of interceptors
+interceptors.*  |           |	 	  
+
+> Example for agent named a1:
+
+	a1.sources = r1
+	a1.channels = c1
+	a1.sources.r1.type = netcatudp
+	a1.sources.r1.bind = 0.0.0.0
+	a1.sources.r1.port = 6666
+	a1.sources.r1.channels = c1
+
+## 11、Sequence Generator Source
