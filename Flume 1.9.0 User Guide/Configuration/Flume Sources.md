@@ -674,3 +674,366 @@ interceptors.*  |           |
 	a1.sources.r1.channels = c1
 
 ## 11、Sequence Generator Source
+
+> A simple sequence generator that continuously generates events with a counter that starts from 0, increments by 1 and stops at `totalEvents`. Retries when it can’t send events to the channel. Useful mainly for testing. During retries it keeps the body of the retried messages the same as before so that the number of unique events - after de-duplication at destination - is expected to be equal to the specified totalEvents. Required properties are in bold.
+
+一个简单的序列生成器，用一个计数器连续生成 events，计数器从 0 开始，加1，直到 `totalEvents` 结束。
+
+当无法将 events 发送到 channel 时会重试。
+
+主要用于测试。在重试期间，它将保持重试消息体与之前相同，以便在目的地删除重复数据后，唯一 events 的数量将与指定的 `totalEvents` 相等。必需的属性以粗体显示。
+
+Property Name   |  Default	|   Description
+---|:---|:---
+**channels**	|     –	    |
+**type**	    |     –	    |   The component type name, needs to be `seq`【组件类型的名称，需要是`seq`】
+selector.type   |           |	replicating or multiplexing
+selector.*	    |replicating|	Depends on the selector.type value
+interceptors	|     –	    |   Space-separated list of interceptors
+interceptors.*	|           |   	 
+batchSize	    |     1	    |   Number of events to attempt to process per request loop.【在每个请求循环中，尝试处理事件的数量】
+totalEvents	    |Long.MAX_VALUE	 |   Number of unique events sent by the source.【由源发送的唯一事件的数量】
+
+> Example for agent named a1:
+
+	a1.sources = r1
+	a1.channels = c1
+	a1.sources.r1.type = seq
+	a1.sources.r1.channels = c1
+
+## 12、Syslog Sources
+
+> Reads syslog data and generate Flume events. The UDP source treats an entire message as a single event. The TCP sources create a new event for each string of characters separated by a newline (‘n’).Required properties are in bold.
+
+读取 syslog 数据，并生成 Flume events。
+
+UDP source 将整个消息视为单个 event。
+
+TCP sources 为每个由换行符('n')分隔的字符串创建一个新 event。。
+
+必需的属性以粗体显示。
+
+### 12.1、Syslog TCP Source
+
+> The original, tried-and-true syslog TCP source.
+
+Property Name   |  Default	|   Description
+---|:---|:---
+**channels**	|    –	    |
+**type**	    |    –	    |   The component type name, needs to be `syslogtcp`【组件类型的名称，需要是`syslogtcp`】
+**host**	    |    –	    |   Host name or IP address to bind to【绑定的主机名或ip地址】
+**port**	    |    –	    |   Port # to bind to【绑定的端口】
+eventSize	    |   2500	|   Maximum size of a single event line, in bytes【一个事件行的最大大小，单位字节】
+keepFields	    |   none	|   Setting this to ‘all’ will preserve the Priority, Timestamp and Hostname in the body of the event. A spaced separated list of fields to include is allowed as well. Currently, the following fields can be included: priority, version, timestamp, hostname. The values ‘true’ and ‘false’ have been deprecated in favor of ‘all’ and ‘none’.【设为`all`，将保留事件主体的Priority、Timestamp、Hostname。也允许包含空格划分的列表。当前，包含下列字段：priority、version、timestamp、hostname。弃用了`true`、`false`，取而代之的是`all`、`none`】
+clientIPHeader	|     –	    |   If specified, the IP address of the client will be stored in the header of each event using the header name specified here. This allows for interceptors and channel selectors to customize routing logic based on the IP address of the client. Do not use the standard Syslog header names here (like `_host_`) because the event header will be overridden in that case.【如果指定，客户端的IP地址将使用这里指定的header名称存储在每个事件的header中。这就允许拦截器和channel选择器根据客户端的IP地址来自定义路由逻辑。不要使用标准的Syslog header名称，如`_host_`，因为事件header在那个案例中被覆盖。】
+clientHostnameHeader| –	    |   If specified, the host name of the client will be stored in the header of each event using the header name specified here. This allows for interceptors and channel selectors to customize routing logic based on the host name of the client. Retrieving the host name may involve a name service reverse lookup which may affect the performance. Do not use the standard Syslog header names here (like `_host_`) because the event header will be overridden in that case.【如果指定，客户端的主机名将使用这里指定的header名称存储在每个事件的header中。这就允许拦截器和channel选择器根据客户端的主机名来自定义路由逻辑。检索主机名可能涉及到名称服务反向查找，这可能会影响性能。不要使用标准的Syslog header名称，如`_host_`，因为事件header在那个案例中被覆盖。】
+selector.type	|   	    |   replicating or multiplexing
+selector.*	    |replicating|	Depends on the selector.type value
+interceptors	|     –	    |   Space-separated list of interceptors
+interceptors.*	|           | 	 
+ssl	            |   false	|   Set this to true to enable SSL encryption. If SSL is enabled, you must also specify a “keystore” and a “keystore-password”, either through component level parameters (see below) or as global SSL parameters (see SSL/TLS support section).【为true时，启用ssl加密。如果启用了ssl，必须也指定一个“keystore”和“keystore-password”，要么通过组件级的参数，要么作为全局的ssl参数。】
+keystore	    |     –   	|   This is the path to a Java keystore file. If not specified here, then the global keystore will be used (if defined, otherwise configuration error).【这是一个java keystore文件的路径。如果不在这指定，将使用全局的keystore（如果定义的话，否则出现配置错误）】
+keystore-password|	  –	    |   The password for the Java keystore. If not specified here, then the global keystore password will be used (if defined, otherwise configuration error).【Java keystore密码。如果不在这指定，将使用全局的keystore密码（如果定义的话，否则出现配置错误）】
+keystore-type	|    JKS	|   The type of the Java keystore. This can be “JKS” or “PKCS12”. If not specified here, then the global keystore type will be used (if defined, otherwise the default is JKS).【Java keystore类型。可以是“JKS”或“PKCS12”。如果不在这指定，将使用全局的keystore类型（如果定义的话，否则出现默认是JKS）】
+exclude-protocols|	SSLv3	|   Space-separated list of SSL/TLS protocols to exclude. SSLv3 will always be excluded in addition to the protocols specified.【排除的空格分隔的SSL/TLS协议的列表。除了指定的协议，SSLv3总是被排除在外。】
+include-protocols|	 –	    |   Space-separated list of SSL/TLS protocols to include. The enabled protocols will be the included protocols without the excluded protocols. If included-protocols is empty, it includes every supported protocols.【包含的空格分隔的SSL/TLS协议的列表。启用的协议将是要包含的协议，没有排除的协议，如果included-protocols为空，它包含每一个支持的协议。】
+exclude-cipher-suites|	–	|   Space-separated list of cipher suites to exclude.【排除的空格分隔的cipher suites的列表。】
+include-cipher-suites|	–	|   Space-separated list of cipher suites to include. The enabled cipher suites will be the included cipher suites without the excluded cipher suites. If included-cipher-suites is empty, it includes every supported cipher suites.【包含的空格分隔的cipher suites的列表。启用的cipher suites将是要包含的cipher suites，没有排除的cipher suites。如果此项是空，它包含每一个支持的cipher suites】
+
+> For example, a syslog TCP source for agent named a1:
+
+	a1.sources = r1
+	a1.channels = c1
+	a1.sources.r1.type = syslogtcp
+	a1.sources.r1.port = 5140
+	a1.sources.r1.host = localhost
+	a1.sources.r1.channels = c1
+
+### 12.2、Multiport Syslog TCP Source
+
+> This is a newer, faster, multi-port capable version of the Syslog TCP source. Note that the ports configuration setting has replaced port. Multi-port capability means that it can listen on many ports at once in an efficient manner. This source uses the Apache Mina library to do that. Provides support for RFC-3164 and many common RFC-5424 formatted messages. Also provides the capability to configure the character set used on a per-port basis.
+
+这是一个更新、更快、支持多端口的 Syslog TCP source 版本。
+
+注意，端口配置设置已经替换了端口。多端口功能意味着它可以以一种高效的方式同时监听多个端口。
+
+这个 source 使用 Apache Mina 库来实现这一点。
+
+提供对 RFC-3164 和许多常见 RFC-5424 格式消息的支持。还提供了在每个端口上配置使用的字符集的功能。
+
+Property Name   |  Default	|   Description
+---|:---|:---
+**channels**	|    –	    |
+**type**	    |    –	    |   The component type name, needs to be `multiport_syslogtcp`【组件类型的名称，需要是`multiport_syslogtcp`】
+**host**	    |    –	    |   Host name or IP address to bind to.【绑定的主机名或ip地址】
+**ports**	    |    –	    |   Space-separated list (one or more) of ports to bind to.【绑定的端口的列表，用空格分隔】
+eventSize	    |   2500	|   Maximum size of a single event line, in bytes.【一个事件行的最大大小，单位字节】
+keepFields	    |   none	|   Setting this to ‘all’ will preserve the Priority, Timestamp and Hostname in the body of the event. A spaced separated list of fields to include is allowed as well. Currently, the following fields can be included: priority, version, timestamp, hostname. The values ‘true’ and ‘false’ have been deprecated in favor of ‘all’ and ‘none’.【设为all，将保留事件主体的Priority、Timestamp、Hostname。也允许包含空格划分的列表。当前，包含下列字段：priority、version、timestamp、hostname。弃用了true、false，取而代之的是all、none】
+portHeader	    |     –	    |   If specified, the port number will be stored in the header of each event using the header name specified here. This allows for interceptors and channel selectors to customize routing logic based on the incoming port.【如果指定，端口数字将使用这里指定的header名称存储在每个事件的header中。这就允许拦截器和channel选择器根据传入的端口来自定义路由逻辑。】
+clientIPHeader	|     –	    |   If specified, the IP address of the client will be stored in the header of each event using the header name specified here. This allows for interceptors and channel selectors to customize routing logic based on the IP address of the client. Do not use the standard Syslog header names here (like `_host_`) because the event header will be overridden in that case.【如果指定，客户端的IP地址将使用这里指定的header名称存储在每个事件的header中。这就允许拦截器和channel选择器根据客户端的IP地址来自定义路由逻辑。不要使用标准的Syslog header名称，如_host_，因为事件header在那个案例中被覆盖。】
+clientHostnameHeader|	–	|   If specified, the host name of the client will be stored in the header of each event using the header name specified here. This allows for interceptors and channel selectors to customize routing logic based on the host name of the client. Retrieving the host name may involve a name service reverse lookup which may affect the performance. Do not use the standard Syslog header names here (like `_host_`) because the event header will be overridden in that case.【如果指定，客户端的主机名将使用这里指定的header名称存储在每个事件的header中。这就允许拦截器和channel选择器根据客户端的主机名来自定义路由逻辑。检索主机名可能涉及到名称服务反向查找，这可能会影响性能。不要使用标准的Syslog header名称，如_host_，因为事件header在那个案例中被覆盖。】
+charset.default	|   UTF-8	|   Default character set used while parsing syslog events into strings.【当解析syslog events为字符串时，使用的默认字符集】
+`charset.port.<port>`|	–	|   Character set is configurable on a per-port basis.【在每个端口字符集是可配置的】
+batchSize	    |    100	|   Maximum number of events to attempt to process per request loop. Using the default is usually fine.【在每个请求循环中，尝试处理事件的数量。使用默认值即可】
+readBufferSize	|    1024	|   Size of the internal Mina read buffer. Provided for performance tuning. Using the default is usually fine.【内部Mina读取缓冲区的大小。提供性能调优。使用默认值即可】
+numProcessors	|(auto-detected)|	Number of processors available on the system for use while processing messages. Default is to auto-detect # of CPUs using the Java Runtime API. Mina will spawn 2 request-processing threads per detected CPU, which is often reasonable.【处理消息时，系统可使用的处理器的数量。】
+selector.type	|replicating|	replicating, multiplexing, or custom
+selector.*	    |     –	    |   Depends on the selector.type value
+interceptors	|     –	    |   Space-separated list of interceptors.
+interceptors.*	|           |	 
+ssl	            |   false	|   Set this to true to enable SSL encryption. If SSL is enabled, you must also specify a “keystore” and a “keystore-password”, either through component level parameters (see below) or as global SSL parameters (see SSL/TLS support section).【为true时，启用ssl加密。如果启用了ssl，必须也指定一个“keystore”和“keystore-password”，要么通过组件级的参数，要么作为全局的ssl参数。】
+keystore	    |     –	    |   This is the path to a Java keystore file. If not specified here, then the global keystore will be used (if defined, otherwise configuration error).【这是一个java keystore文件的路径。如果不在这指定，将使用全局的keystore（如果定义的话，否则出现配置错误）】
+keystore-password|	  –	    |   The password for the Java keystore. If not specified here, then the global keystore password will be used (if defined, otherwise configuration error).【Java keystore密码。如果不在这指定，将使用全局的keystore密码（如果定义的话，否则出现配置错误）】
+keystore-type	|    JKS	|   The type of the Java keystore. This can be “JKS” or “PKCS12”. If not specified here, then the global keystore type will be used (if defined, otherwise the default is JKS).【Java keystore类型。可以是“JKS”或“PKCS12”。如果不在这指定，将使用全局的keystore类型（如果定义的话，否则出现默认是JKS）】
+exclude-protocols|	SSLv3	|   Space-separated list of SSL/TLS protocols to exclude. SSLv3 will always be excluded in addition to the protocols specified.【排除的空格分隔的SSL/TLS协议的列表。除了指定的协议，SSLv3总是被排除在外。】
+include-protocols|	–	    |   Space-separated list of SSL/TLS protocols to include. The enabled protocols will be the included protocols without the excluded protocols. If included-protocols is empty, it includes every supported protocols.【包含的空格分隔的SSL/TLS协议的列表。启用的协议将是要包含的协议，没有排除的协议，如果included-protocols为空，它包含每一个支持的协议。】
+exclude-cipher-suites|	–	|   Space-separated list of cipher suites to exclude.【排除的空格分隔的cipher suites的列表。】
+include-cipher-suites|	–	|   Space-separated list of cipher suites to include. The enabled cipher suites will be the included cipher suites without the excluded cipher suites. If included-cipher-suites is empty, it includes every supported cipher suites.【包含的空格分隔的cipher suites的列表。启用的cipher suites将是要包含的cipher suites，没有排除的cipher suites。如果此项是空，它包含每一个支持的cipher suites】
+
+> For example, a multiport syslog TCP source for agent named a1:
+
+	a1.sources = r1
+	a1.channels = c1
+	a1.sources.r1.type = multiport_syslogtcp
+	a1.sources.r1.channels = c1
+	a1.sources.r1.host = 0.0.0.0
+	a1.sources.r1.ports = 10001 10002 10003
+	a1.sources.r1.portHeader = port
+
+### 12.3、Syslog UDP Source
+
+Property Name   |  Default	|   Description
+---|:---|:---
+**channels**	|     –	    |
+**type**	    |     –	    |   The component type name, needs to be `syslogudp`【组件类型的名称，需要是`syslogudp`】
+**host**	    |     –	    |   Host name or IP address to bind to【绑定的主机名或ip地址】
+**port**	    |     –	    |   Port # to bind to【绑定的端口】
+keepFields	    |   false	|   Setting this to true will preserve the Priority, Timestamp and Hostname in the body of the event.【设为all，将保留事件主体的Priority、Timestamp、Hostname。】
+clientIPHeader	|     –	    |   If specified, the IP address of the client will be stored in the header of each event using the header name specified here. This allows for interceptors and channel selectors to customize routing logic based on the IP address of the client. Do not use the standard Syslog header names here (like `_host_`) because the event header will be overridden in that case.【如果指定，客户端的IP地址将使用这里指定的header名称存储在每个事件的header中。这就允许拦截器和channel选择器根据客户端的IP地址来自定义路由逻辑。不要使用标准的Syslog header名称，如`_host_`，因为事件header在那个案例中被覆盖。】
+clientHostnameHeader|	–	|   If specified, the host name of the client will be stored in the header of each event using the header name specified here. This allows for interceptors and channel selectors to customize routing logic based on the host name of the client. Retrieving the host name may involve a name service reverse lookup which may affect the performance. Do not use the standard Syslog header names here (like `_host_`) because the event header will be overridden in that case.【如果指定，客户端的主机名将使用这里指定的header名称存储在每个事件的header中。这就允许拦截器和channel选择器根据客户端的主机名来自定义路由逻辑。检索主机名可能涉及到名称服务反向查找，这可能会影响性能。不要使用标准的Syslog header名称，如`_host_`，因为事件header在那个案例中被覆盖。】
+selector.type   |	 	    |   replicating or multiplexing
+selector.*	    |replicating|	Depends on the selector.type value
+interceptors	|     –	    |   Space-separated list of interceptors
+interceptors.*	|           |	 
+
+> For example, a syslog UDP source for agent named a1:
+
+	a1.sources = r1
+	a1.channels = c1
+	a1.sources.r1.type = syslogudp
+	a1.sources.r1.port = 5140
+	a1.sources.r1.host = localhost
+	a1.sources.r1.channels = c1
+
+## 13、HTTP Source
+
+> A source which accepts Flume Events by HTTP POST and GET. GET should be used for experimentation only. HTTP requests are converted into flume events by a pluggable “handler” which must implement the HTTPSourceHandler interface. This handler takes a HttpServletRequest and returns a list of flume events. All events handled from one Http request are committed to the channel in one transaction, thus allowing for increased efficiency on channels like the file channel. If the handler throws an exception, this source will return a HTTP status of 400. If the channel is full, or the source is unable to append events to the channel, the source will return a HTTP 503 - Temporarily unavailable status.
+
+一个通过 HTTP POST 和 GET 接受 Flume Events 的 source。
+
+GET 只能用于实验。HTTP 请求通过一个可插拔的 “handler” 转换成 flume events，这个 “handler” 必须实现 HTTPSourceHandler 接口。
+
+这个 handler 接受 HttpServletRequest 并返回一个 flume events 列表。从一个 Http 请求处理的所有 events 都提交到一个事务中的 channel，从而提高了像 file channel 的效率。
+
+如果 handler 抛出异常，此 source 将返回 HTTP 状态为 400。如果 channel 已满，或者 source 无法向 channel 追加 events，则 source 将返回 HTTP 503 -临时不可用状态。
+
+> All events sent in one post request are considered to be one batch and inserted into the channel in one transaction.
+
+在一个 post 请求中发送的所有 events 都被认为是一个批次，并插入到一个事务中的 channel 中。
+
+> This source is based on Jetty 9.4 and offers the ability to set additional Jetty-specific parameters which will be passed directly to the Jetty components.
+
+该 source 基于 Jetty 9.4，提供了设置将直接传递给 Jetty 组件的额外 Jetty 特定参数的能力。
+
+Property Name   |  Default	|   Description
+---|:---|:---
+**type**	 	|           |   The component type name, needs to be `http`【组件类型的名称，需要是`http`】
+**port**	    |     –	    |   The port the source should bind to. 【source绑定的主机名或ip地址】
+bind	        |   0.0.0.0	|   The hostname or IP address to listen on 【监听的端口】
+handler	        |`org.apache.flume.source.http.JSONHandler`	| The FQCN of the handler class.【handler类的完全限定类名】
+handler.*	    |     –	    |   Config parameters for the handler【handler的配置参数】
+selector.type	|replicating|	replicating or multiplexing
+selector.*	 	|           |   Depends on the `selector.type` value
+interceptors	|     –	    |   Space-separated list of interceptors
+interceptors.*  |           |	 	 
+ssl	            |   false	|   Set the property true, to enable SSL. HTTP Source does not support SSLv3.【设为true，启用SSL。HTTP Source不支持SSLv3】
+exclude-protocols|	SSLv3	|   Space-separated list of SSL/TLS protocols to exclude. SSLv3 will always be excluded in addition to the protocols specified.【排除的空格分隔的SSL/TLS协议的列表。除了指定的协议，SSLv3总是被排除在外。】
+include-protocols|	  –	    |   Space-separated list of SSL/TLS protocols to include. The enabled protocols will be the included protocols without the excluded protocols. If included-protocols is empty, it includes every supported protocols.【包含的空格分隔的SSL/TLS协议的列表。启用的协议将是要包含的协议，没有排除的协议，如果included-protocols为空，它包含每一个支持的协议。】
+exclude-cipher-suites|	–	|  Space-separated list of cipher suites to exclude.【排除的空格分隔的cipher suites的列表。】
+include-cipher-suites|	–	|  Space-separated list of cipher suites to include. The enabled cipher suites will be the included cipher suites without the excluded cipher suites.【包含的空格分隔的cipher suites的列表。启用的cipher suites将是要包含的cipher suites，没有排除的cipher suites。】
+keystore	 	 |          |  Location of the keystore including keystore file name. If SSL is enabled but the keystore is not specified here, then the global keystore will be used (if defined, otherwise configuration error).【包含keystore文件名的keystore路径。如果启用了SSL，但不在这指定，将使用全局的keystore（如果定义的话，否则出现配置错误）】
+keystore-password|	 	    |  Keystore password. If SSL is enabled but the keystore password is not specified here, then the global keystore password will be used (if defined, otherwise configuration error).【keystore密码。如果启用了SSL，不在这指定，将使用全局的keystore密码（如果定义的话，否则出现配置错误）】
+keystore-type	|    JKS	|  Keystore type. This can be “JKS” or “PKCS12”.【keystore类型。可以是“JKS”或“PKCS12”。】
+QueuedThreadPool.*|	 	    |  Jetty specific settings to be set on org.eclipse.jetty.util.thread.QueuedThreadPool. N.B. QueuedThreadPool will only be used if at least one property of this class is set.【在`org.eclipse.jetty.util.thread.QueuedThreadPool`上设置特定的Jetty配置。注意:QueuedThreadPool只有在设置了该类的至少一个属性后才会被使用。】
+HttpConfiguration.*|	 	|  Jetty specific settings to be set on org.eclipse.jetty.server.HttpConfiguration【在`org.eclipse.jetty.server.HttpConfiguration`上设置特定的Jetty配置。】
+SslContextFactory.*|	 	|  Jetty specific settings to be set on org.eclipse.jetty.util.ssl.SslContextFactory (only applicable when ssl is set to true).【在`org.eclipse.jetty.util.ssl.SslContextFactory`上设置特定的Jetty配置。（仅在ssl设为true时可用）】
+ServerConnector.*  |	 	|Jetty specific settings to be set on `org.eclipse.jetty.server.ServerConnector`【在`org.eclipse.jetty.server.ServerConnector`上设置特定的Jetty配置。】
+
+> Deprecated Properties
+
+Property Name   |  Default	|   Description
+---|:---|:---
+keystorePassword|	–	    |   Use keystore-password. Deprecated value will be overwritten with the new one.
+excludeProtocols|	SSLv3	|   Use exclude-protocols. Deprecated value will be overwritten with the new one.
+enableSSL	    |   false	|   Use ssl. Deprecated value will be overwritten with the new one.
+
+> N.B. Jetty-specific settings are set using the setter-methods on the objects listed above. For full details see the Javadoc for these classes ([QueuedThreadPool](http://www.eclipse.org/jetty/javadoc/9.4.6.v20170531/org/eclipse/jetty/util/thread/QueuedThreadPool.html), [HttpConfiguration](http://www.eclipse.org/jetty/javadoc/9.4.6.v20170531/org/eclipse/jetty/server/HttpConfiguration.html), [SslContextFactory](http://www.eclipse.org/jetty/javadoc/9.4.6.v20170531/org/eclipse/jetty/util/ssl/SslContextFactory.html) and [ServerConnector](http://www.eclipse.org/jetty/javadoc/9.4.6.v20170531/org/eclipse/jetty/server/ServerConnector.html)).
+
+注意:特定于 jetty 的设置是使用上面列出的对象的 setter 方法设置的。
+
+> When using Jetty-specific setings, named properites above will take precedence (for example excludeProtocols will take precedence over SslContextFactory.ExcludeProtocols). All properties will be inital lower case.
+
+当使用特定于 jetty 的设置时，上面命名的属性将具有优先级(例如，excludeProtocols 将优先于 SslContextFactory.ExcludeProtocols)。所有属性都是小写字母。
+
+> An example http source for agent named a1:
+
+	a1.sources = r1
+	a1.channels = c1
+	a1.sources.r1.type = http
+	a1.sources.r1.port = 5140
+	a1.sources.r1.channels = c1
+	a1.sources.r1.handler = org.example.rest.RestHandler
+	a1.sources.r1.handler.nickname = random props
+	a1.sources.r1.HttpConfiguration.sendServerVersion = false
+	a1.sources.r1.ServerConnector.idleTimeout = 300
+
+### 13.1、JSONHandler
+
+> A handler is provided out of the box which can handle events represented in JSON format, and supports UTF-8, UTF-16 and UTF-32 character sets. The handler accepts an array of events (even if there is only one event, the event has to be sent in an array) and converts them to a Flume event based on the encoding specified in the request. If no encoding is specified, UTF-8 is assumed. The JSON handler supports UTF-8, UTF-16 and UTF-32. Events are represented as follows.
+
+它提供了一个开箱即用的 handler，可以处理 JSON 格式的 events，并支持 UTF-8、UTF-16 和 UTF-32 字符集。
+
+handler 接受一个 events 数组(即使只有一个事件，事件也必须以数组的形式发送)，并根据请求中指定的编码将它们转换为 Flume events。
+
+如果没有指定编码，则假定为 UTF-8。JSON handler支持 UTF-8, UTF-16 和 UTF-32。
+
+Events 如下所示。
+
+	[{
+	  "headers" : {
+	             "timestamp" : "434324343",
+	             "host" : "random_host.example.com"
+	             },
+	  "body" : "random_body"
+	  },
+	  {
+	  "headers" : {
+	             "namenode" : "namenode.example.com",
+	             "datanode" : "random_datanode.example.com"
+	             },
+	  "body" : "really_random_body"
+	  }]
+
+> To set the charset, the request must have content type specified as application/json; charset=UTF-8 (replace UTF-8 with UTF-16 or UTF-32 as required).
+
+要设置字符集，请求的内容类型必须指定为application/json；charset=UTF-8(请根据实际情况使用 UTF-16 或 UTF-32 进行替换 UTF-8)。
+
+> One way to create an event in the format expected by this handler is to use JSONEvent provided in the Flume SDK and use Google Gson to create the JSON string using the Gson#fromJson(Object, Type) method. The type token to pass as the 2nd argument of this method for list of events can be created by:
+
+以此 handler 所期望的格式创建 event 的一种方法是使用 Flume SDK 提供的 JSONEvent，并使用 Google Gson 的 Gson#fromJson(Object, Type) 方法创建 JSON 字符串。
+
+作为该方法的第二个参数传递的类型令牌可以通过以下方式创建:
+
+	Type type = new TypeToken<List<JSONEvent>>() {}.getType();
+
+
+### 13.2、BlobHandler
+
+> By default HTTPSource splits JSON input into Flume events. As an alternative, BlobHandler is a handler for HTTPSource that returns an event that contains the request parameters as well as the Binary Large Object (BLOB) uploaded with this request. For example a PDF or JPG file. Note that this approach is not suitable for very large objects because it buffers up the entire BLOB in RAM.
+
+默认情况下，HTTPSource 将 JSON 输入拆分为 Flume events。
+
+作为另一种选择，BlobHandler 是 HTTPSource 的处理程序，它返回一个事件，该事件包含请求参数以及与此请求一起上传的二进制大对象(BLOB)。例如 PDF 或 JPG 文件。
+
+注意，这种方法不适用于非常大的对象，因为它会在 RAM 中缓冲整个 BLOB。
+
+Property Name   |  Default	|   Description
+---|:---|:---
+handler	        |     –	    |   The FQCN of this class: `org.apache.flume.sink.solr.morphline.BlobHandler`
+handler.maxBlobLength |	100000000	|  The maximum number of bytes to read and buffer for a given request【对一个给定请求，读取和缓存的最大字节数】
+
+## 14、Stress Source
+
+> StressSource is an internal load-generating source implementation which is very useful for stress tests. It allows User to configure the size of Event payload, with empty headers. User can configure total number of events to be sent as well maximum number of Successful Event to be delivered.Required properties are in bold.
+
+StressSource 是一种内部产生负载的 source 实现，对压力测试非常有用。
+
+它允许用户配置 Event 有效负载的大小，并带有空 headers。
+
+用户可以配置要发送的 events 总数以及成功发送的 Event 的最大数量。
+
+必需的属性以粗体显示。
+
+Property Name   |  Default	|   Description
+---|:---|:---
+**type**	    |     –	    |    The component type name, needs to be `org.apache.flume.source.StressSource`【组件类型的名称，需要是`org.apache.flume.source.StressSource`】
+size	        |    500	|    Payload size of each Event. Unit:**byte**【每个事件的有效负载的大小】
+maxTotalEvents	|     -1	|    Maximum number of Events to be sent【要发生的最大事件数量】
+maxSuccessfulEvents|  -1	|    Maximum number of Events successfully sent【最大成功发送事件数】
+batchSize	    |      1	|    Number of Events to be sent in one batch【在一个批次中要发生的事件数量】
+maxEventsPerSecond|    0	|    When set to an integer greater than zero, enforces a rate limiter onto the source.【当设置为一个大于0的整数时，在源上强制设置一个速率限制。】
+
+> Example for agent named a1:
+
+	a1.sources = stresssource-1
+	a1.channels = memoryChannel-1
+	a1.sources.stresssource-1.type = org.apache.flume.source.StressSource
+	a1.sources.stresssource-1.size = 10240
+	a1.sources.stresssource-1.maxTotalEvents = 1000000
+	a1.sources.stresssource-1.channels = memoryChannel-1
+
+## 15、Legacy Sources 【待做】
+
+### 15.1、Avro Legacy Source
+
+### 15.2、Thrift Legacy Source
+
+## 16、Custom Source
+
+> A custom source is your own implementation of the Source interface. A custom source’s class and its dependencies must be included in the agent’s classpath when starting the Flume agent. The type of the custom source is its FQCN.
+
+实现 Source 接口的实现。当启动 Flume agent 时，一个自定义的 source 类和它的依赖必须包含在 agent 的类路径中，
+
+自定义的 source 的类型是它的完全限定类名。
+
+Property Name   |  Default	|   Description
+---|:---|:---
+**channels**	|     –	    |
+**type**	    |     –	    |   The component type name, needs to be your FQCN
+selector.type	| 	        |   replicating or multiplexing
+selector.*	    |replicating|	Depends on the selector.type value
+interceptors	|     –	    |   Space-separated list of interceptors
+interceptors.*	|           |
+
+> Example for agent named a1:
+
+	a1.sources = r1
+	a1.channels = c1
+	a1.sources.r1.type = org.example.MySource
+	a1.sources.r1.channels = c1
+
+## 17、Scribe Source
+
+> Scribe is another type of ingest system. To adopt existing Scribe ingest system, Flume should use ScribeSource based on Thrift with compatible transfering protocol. For deployment of Scribe please follow the guide from Facebook. Required properties are in bold.
+
+Scribe 是另一种摄入系统。为了采用现有的 Scribe 系统，Flume 应采用基于 Thrift 的 ScribeSource，并具有兼容的传输协议。
+
+必需的属性以粗体显示。
+
+Property Name   |  Default	|   Description
+---|:---|:---
+**type**	    |    –	    |   The component type name, needs to be `org.apache.flume.source.scribe.ScribeSource`
+port	        |   1499	|   Port that Scribe should be connected
+maxReadBufferBytes|	16384000|	Thrift Default FrameBuffer Size
+workerThreads	|    5	    |   Handing threads number in Thrift
+selector.type	|	        |
+selector.*	 	|           |
+
+> Example for agent named a1:
+
+	a1.sources = r1
+	a1.channels = c1
+	a1.sources.r1.type = org.apache.flume.source.scribe.ScribeSource
+	a1.sources.r1.port = 1463
+	a1.sources.r1.workerThreads = 5
+	a1.sources.r1.channels = c1
