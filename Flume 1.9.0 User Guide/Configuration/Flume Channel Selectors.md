@@ -10,6 +10,8 @@
 
 > Required properties are in bold.
 
+必需的属性以粗体显示。
+
 Property Name     |   Default        | 	Description
 ---|:---|:---
 selector.type     |   replicating    |   The component type name, needs to be replicating 【组件的类型名称，需要设置为`replicating`】
