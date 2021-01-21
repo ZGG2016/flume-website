@@ -22,6 +22,86 @@
 
 ## 4、Sink
 
+> The purpose of a Sink to extract Events from the Channel and forward them to the next Flume Agent in the flow or store them in an external repository. A Sink is associated with exactly one Channels, as configured in the Flume properties file. There’s one SinkRunner instance associated with every configured Sink, and when the Flume framework calls SinkRunner.start(), a new thread is created to drive the Sink (using SinkRunner.PollingRunner as the thread’s Runnable). This thread manages the Sink’s lifecycle. The Sink needs to implement the start() and stop() methods that are part of the LifecycleAware interface. The Sink.start() method should initialize the Sink and bring it to a state where it can forward the Events to its next destination. The Sink.process() method should do the core processing of extracting the Event from the Channel and forwarding it. The Sink.stop() method should do the necessary cleanup (e.g. releasing resources). The Sink implementation also needs to implement the Configurable interface for processing its own configuration settings. For example:
+
+Sink 的目的是从 Channel 中提取 Events，并将它们转发到流中的下一个 Flume Agent 或将它们存储在外部存储库中。
+
+一个 Sink 仅与一个 Channels 相关联，如 Flume 属性文件中配置的那样。
+
+每个配置的 Sink 都有一个 SinkRunner 实例，当 Flume 框架调用 SinkRunner.start() 时，创建一个新的线程来驱动 Sink(使用SinkRunner.PollingRunner作为线程的Runnable)。
+
+这个线程管理 Sink 的生命周期。Sink 需要实现作为 LifecycleAware 接口一部分的 start() 和 stop() 方法。
+
+Sink.start() 方法应该初始化 Sink，并使其处于可以将 Events 转发到下一个目的地的状态。
+
+Sink.process() 方法应该执行从 Channel 提取 Events 并转发它的核心处理。
+
+Sink.stop() 方法应该做必要的清理(例如释放资源)。
+
+Sink 实现还需要实现 Configurable 接口，以处理其自己的配置设置。例如:
+
+```java
+public class MySink extends AbstractSink implements Configurable {
+  private String myProp;
+
+  @Override
+  public void configure(Context context) {
+    String myProp = context.getString("myProp", "defaultValue");
+
+    // Process the myProp value (e.g. validation)
+
+    // Store myProp for later retrieval by process() method
+    this.myProp = myProp;
+  }
+
+  @Override
+  public void start() {
+    // Initialize the connection to the external repository (e.g. HDFS) that
+    // this Sink will forward Events to ..
+  }
+
+  @Override
+  public void stop () {
+    // Disconnect from the external respository and do any
+    // additional cleanup (e.g. releasing resources or nulling-out
+    // field values) ..
+  }
+
+  @Override
+  public Status process() throws EventDeliveryException {
+    Status status = null;
+
+    // Start transaction
+    Channel ch = getChannel();
+    Transaction txn = ch.getTransaction();
+    txn.begin();
+    try {
+      // This try clause includes whatever Channel operations you want to do
+
+      Event event = ch.take();
+
+      // Send the Event to the external repository.
+      // storeSomeData(e);
+
+      txn.commit();
+      status = Status.READY;
+    } catch (Throwable t) {
+      txn.rollback();
+
+      // Log exception, handle individual exceptions as needed
+
+      status = Status.BACKOFF;
+
+      // re-throw all Errors
+      if (t instanceof Error) {
+        throw (Error)t;
+      }
+    }
+    return status;
+  }
+}
+```
+
 ## 5、Source
 
 > The purpose of a Source is to receive data from an external client and store it into the configured Channels. A Source can get an instance of its own ChannelProcessor to process an Event, commited within a Channel local transaction, in serial. In the case of an exception, required Channels will propagate the exception, all Channels will rollback their transaction, but events processed previously on other Channels will remain committed.

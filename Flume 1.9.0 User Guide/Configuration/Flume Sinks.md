@@ -435,3 +435,491 @@ batchSize	     |     100	   |
 	a1.sinks.k1.channel = c1
 
 ## 9、HBaseSinks
+
+### 9.1、HBaseSink
+
+> This sink writes data to HBase. The Hbase configuration is picked up from the first hbase-site.xml encountered in the classpath. A class implementing HbaseEventSerializer which is specified by the configuration is used to convert the events into HBase puts and/or increments. These puts and increments are then written to HBase. This sink provides the same consistency guarantees as HBase, which is currently row-wise atomicity. In the event of Hbase failing to write certain events, the sink will replay all events in that transaction.
+
+该 sink 向 HBase 写入数据。Hbase 配置是从类路径中遇到的第一个 `hbase-site.xml` 中获取的。
+
+一个实现 `HbaseEventSerializer` 的类，由配置指定，用于将 events 转换为 HBase 的 put 和或 increment。然后这些 put 和 increment 写入 HBase。
+
+这个 sink 提供了与 HBase 相同的一致性保证，目前是行原子性。当 Hbase 写某些 events 失败时，sink将重播该事务中的所有 events。
+
+> The HBaseSink supports writing data to secure HBase. To write to secure HBase, the user the agent is running as must have write permissions to the table the sink is configured to write to. The principal and keytab to use to authenticate against the KDC can be specified in the configuration. The hbase-site.xml in the Flume agent’s classpath must have authentication set to kerberos (For details on how to do this, please refer to HBase documentation).
+
+HBaseSink 支持向安全的 HBase 写入数据。
+
+要写到安全的 HBase，运行 agent 的用户必须对 sink 要写的表有写权限。
+
+可以在配置中指定用于针对 KDC 进行身份验证的 principal 和 keytab。Flume agent 的类路径中的 `hbase-site.xml` 必须将身份验证设置为 kerberos(关于如何做到这一点的详细信息，请参考HBase文档)。
+
+> For convenience, two serializers are provided with Flume. The SimpleHbaseEventSerializer (org.apache.flume.sink.hbase.SimpleHbaseEventSerializer) writes the event body as-is to HBase, and optionally increments a column in Hbase. This is primarily an example implementation. The RegexHbaseEventSerializer (org.apache.flume.sink.hbase.RegexHbaseEventSerializer) breaks the event body based on the given regex and writes each part into different columns.
+
+为了方便，Flume 提供了两个序列化器。
+
+`SimpleHbaseEventSerializer` (`org.apache.flume.sink.hbase.SimpleHbaseEventSerializer`)将 event body 按原貌写入 HBase，并可选择地在 HBase 中增加一个列。这主要是一个示例实现。
+
+`RegexHbaseEventSerializer` 基于给定的正则分解 event body ，并将每个部分写入不同的列中。
+
+> The type is the FQCN: org.apache.flume.sink.hbase.HBaseSink.
+
+类型为 FQCN: `org.apache.flume.sink.hbase.HBaseSink`。
+
+> Required properties are in bold.
+
+必需的属性以粗体显示。
+
+Property Name    |   Default   | 	Description
+---|:---|:---
+**channel**	     |      –	   |	 
+**type**	     |      –	   |    The component type name, needs to be `hbase`【组件类型名称，必须是`hbase`】
+**table**	     |      –	   |    The name of the table in Hbase to write to.【要写入hbase中的表名】
+**columnFamily** |   	–	   |    The column family in Hbase to write to.【要写入hbase中的列族名】
+zookeeperQuorum	 |      –	   |    The quorum spec. This is the value for the property `hbase.zookeeper.quorum` in `hbase-site.xml`
+znodeParent	     |    /hbase   |    The base path for the znode for the -ROOT- region. Value of `zookeeper.znode.parent` in `hbase-site.xml`
+batchSize	     |     100	   |    Number of events to be written per txn.【每次事务中，写入的事件数量】
+coalesceIncrements|	  false	   |    Should the sink coalesce multiple increments to a cell per batch. This might give better performance if there are multiple increments to a limited number of cells.【sink是否在每个批次中对一个单元合并多个增量。如果对有限的单元格存在多个增量，这可能会带来更好的性能。】
+serializer	| org.apache.flume.sink.hbase.SimpleHbaseEventSerializer  |	Default increment column = “iCol”, payload column = “pCol”.
+serializer.*	 |      –	   |    Properties to be passed to the serializer.
+kerberosPrincipal|	    –	   |    Kerberos user principal for accessing secure HBase
+kerberosKeytab	 |      –	   |    Kerberos keytab for accessing secure HBase
+
+> Example for agent named a1:
+
+	a1.channels = c1
+	a1.sinks = k1
+	a1.sinks.k1.type = hbase
+	a1.sinks.k1.table = foo_table
+	a1.sinks.k1.columnFamily = bar_cf
+	a1.sinks.k1.serializer = org.apache.flume.sink.hbase.RegexHbaseEventSerializer
+	a1.sinks.k1.channel = c1
+
+### 9.2、HBase2Sink
+
+> HBase2Sink is the equivalent of HBaseSink for HBase version 2. The provided functionality and the configuration parameters are the same as in case of HBaseSink (except the hbase2 tag in the sink type and the package/class names).
+
+HBase2Sink 相当于 HBase version 2 中的 HBaseSink。
+
+所提供的功能和配置参数与 HBaseSink 的情况相同(除了 sink type 和包/类名中的 hbase2 标签)。
+
+> The type is the FQCN: org.apache.flume.sink.hbase2.HBase2Sink.
+
+> Required properties are in bold.
+
+Property Name    |   Default   | 	Description
+---|:---|:---
+**channel**	     |      –	   |		 
+**type**	     |      –	   |    The component type name, needs to be `hbase2`【组件类型名称，必须是`hbase2`】
+**table**	     |      –	   |    The name of the table in Hbase to write to.【要写入hbase中的表名】
+**columnFamily** |   	–	   |    The column family in Hbase to write to.【要写入hbase中的列族名】
+zookeeperQuorum	 |      –	   |    The quorum spec. This is the value for the property `hbase.zookeeper.quorum` in `hbase-site.xml`
+znodeParent	     |   /hbase	   |    The base path for the znode for the -ROOT- region. Value of `zookeeper.znode.parent` in `hbase-site.xml`
+batchSize	     |     100	   |    Number of events to be written per txn.
+coalesceIncrements|	  false	   |    Should the sink coalesce multiple increments to a cell per batch. This might give better performance if there are multiple increments to a limited number of cells.
+serializer  |org.apache.flume.sink.hbase2.SimpleHBase2EventSerializer  |Default increment column = “iCol”, payload column = “pCol”.
+serializer.*	 |      –	   |    Properties to be passed to the serializer.
+kerberosPrincipal|	    –	   |    Kerberos user principal for accessing secure HBase
+kerberosKeytab	 |      –	   |Kerberos keytab for accessing secure HBase
+
+> Example for agent named a1:
+
+	a1.channels = c1
+	a1.sinks = k1
+	a1.sinks.k1.type = hbase2
+	a1.sinks.k1.table = foo_table
+	a1.sinks.k1.columnFamily = bar_cf
+	a1.sinks.k1.serializer = org.apache.flume.sink.hbase2.RegexHBase2EventSerializer
+	a1.sinks.k1.channel = c1
+
+### 9.3、AsyncHBaseSink
+
+> This sink writes data to HBase using an asynchronous model. A class implementing AsyncHbaseEventSerializer which is specified by the configuration is used to convert the events into HBase puts and/or increments. These puts and increments are then written to HBase. This sink uses the Asynchbase API to write to HBase. This sink provides the same consistency guarantees as HBase, which is currently row-wise atomicity. In the event of Hbase failing to write certain events, the sink will replay all events in that transaction. AsyncHBaseSink can only be used with HBase 1.x. The async client library used by AsyncHBaseSink is not available for HBase 2. The type is the FQCN: org.apache.flume.sink.hbase.AsyncHBaseSink. Required properties are in bold.
+
+该 sink 使用异步模型向 HBase 写入数据。
+
+一个在配置中指定的 AsyncHbaseEventSerializer 的实现类，用于将 events 转换为 HBase 的 put 和或 increment。然后这些 put 和 increment 被写入 HBase。
+
+这个 sink 使用 Asynchbase API 写 HBase。这个 sink 提供了与 HBase 相同的一致性保证，目前是行原子性。
+
+当 Hbase 写某些 events 失败时，sink 将重播该事务中的所有 events。
+
+AsyncHBaseSink 只能与 HBase 1.x 一起使用。AsyncHBaseSink 使用的异步客户端库不支持 HBase 2。
+
+类型是 FQCN: org.apache.flume.sink.hbase.AsyncHBaseSink。
+
+必需的属性以粗体显示。
+
+Property Name    |   Default   | 	Description
+---|:---|:---
+**channel**	     |      –	   |	 
+**type**	     |      –	   |    The component type name, needs to be `asynchbase`【组件类型名称，必须是`asynchbase`】
+**table**	     |      –	   |    The name of the table in Hbase to write to.【要写入hbase中的表名】
+zookeeperQuorum	 |      –	   |    The quorum spec. This is the value for the property `hbase.zookeeper.quorum` in `hbase-site.xml`
+znodeParent	     |    /hbase   |    The base path for the znode for the -ROOT- region. Value of `zookeeper.znode.parent` in `hbase-site.xml`
+columnFamily	 |      –	   |    The column family in Hbase to write to.
+batchSize	     |     100	   |    Number of events to be written per txn.
+coalesceIncrements|   false	   |    Should the sink coalesce multiple increments to a cell per batch. This might give better performance if there are multiple increments to a limited number of cells.
+timeout	         |    60000	   |    The length of time (in milliseconds) the sink waits for acks from hbase for all events in a transaction.【sink在一个事务中等待hbase ack的时间长度(以毫秒为单位)。】
+serializer	 | org.apache.flume.sink.hbase.SimpleAsyncHbaseEventSerializer	  |
+serializer.*     |	    –	   |    Properties to be passed to the serializer.
+async.*	         |      –	   |    Properties to be passed to asyncHbase library. These properties have precedence over the old zookeeperQuorum and znodeParent values. You can find the list of the available properties at the documentation page of AsyncHBase.【要传递给asyncHbase库的属性。这些属性优先于旧的zookeeperQuorum和znodepparent值。可以在AsyncHBase的文档页上找到可用属性的列表。】
+
+> Note that this sink takes the Zookeeper Quorum and parent znode information in the configuration. Zookeeper Quorum and parent node configuration may be specified in the flume configuration file. Alternatively, these configuration values are taken from the first hbase-site.xml file in the classpath.
+
+注意，这个 sink 接受配置中的 Zookeeper Quorum 和 parent znode 信息。Zookeeper Quorum 和 parent znode 配置可以在 flume 配置文件中指定。或者，这些配置值取自类路径中的第一个 `hbase-site.xml` 文件。
+
+> If these are not provided in the configuration, then the sink will read this information from the first hbase-site.xml file in the classpath.
+
+如果配置中没有提供这些信息，那么 sink 将从类路径中的第一个 `hbase-site.xml` 文件中读取这些信息。
+
+> Example for agent named a1:
+
+	a1.channels = c1
+	a1.sinks = k1
+	a1.sinks.k1.type = asynchbase
+	a1.sinks.k1.table = foo_table
+	a1.sinks.k1.columnFamily = bar_cf
+	a1.sinks.k1.serializer = org.apache.flume.sink.hbase.SimpleAsyncHbaseEventSerializer
+	a1.sinks.k1.channel = c1
+
+## 10、MorphlineSolrSink【待做】
+
+## 11、ElasticSearchSink
+
+> This sink writes data to an elasticsearch cluster. By default, events will be written so that the Kibana graphical interface can display them - just as if [logstash](https://logstash.net/) wrote them.
+
+该 sink 将数据写入 elasticsearch 集群。默认情况下，events 将被编写，以便 Kibana 图形界面可以显示它们 -- 就像 logstash 编写它们一样。
+
+> The elasticsearch and lucene-core jars required for your environment must be placed in the lib directory of the Apache Flume installation. Elasticsearch requires that the major version of the client JAR match that of the server and that both are running the same minor version of the JVM. SerializationExceptions will appear if this is incorrect. To select the required version first determine the version of elasticsearch and the JVM version the target cluster is running. Then select an elasticsearch client library which matches the major version. A 0.19.x client can talk to a 0.19.x cluster; 0.20.x can talk to 0.20.x and 0.90.x can talk to 0.90.x. Once the elasticsearch version has been determined then read the pom.xml file to determine the correct lucene-core JAR version to use. The Flume agent which is running the ElasticSearchSink should also match the JVM the target cluster is running down to the minor version.
+
+环境所需的 elasticsearch 和 lucene-core jar 必须放在 Apache Flume 安装的 lib 目录中。Elasticsearch 要求客户端 JAR 的 major 版本与服务器版本匹配，并且两者运行相同的 minor 版本 JVM。如果这是不正确的，将出现 serializationexception。
+
+要选择要求的版本，首先确定目标集群正在运行的 elasticsearch 版本和 JVM 版本。然后选择一个与主版本匹配的 elasticsearch 客户端库。0.19.x 客户端可以与 0.19.x 对话；0.20.x 可以与 0.20 和 0.90.x 对话。一旦确定了 elasticsearch 版本，那么就读取 pom.xml 文件，以确定要使用的正确 lucene-core JAR 版本。运行 ElasticSearchSink 的 Flume agent 也应该与目标集群运行到 minor 版本的 JVM 相匹配。
+
+> Events will be written to a new index every day. The name will be `<indexName>-yyyy-MM-dd` where `<indexName>` is the indexName parameter. The sink will start writing to a new index at midnight UTC.
+
+Events 将每天写入一个新的索引。名称为`<indexName>-yyyy-MM-dd`，其中为 `<indexName>` 是索引名称参数。sink 将在午夜 UTC 开始写入新索引。
+
+> Events are serialized for elasticsearch by the ElasticSearchLogStashEventSerializer by default. This behaviour can be overridden with the serializer parameter. This parameter accepts implementations of org.apache.flume.sink.elasticsearch.ElasticSearchEventSerializer or org.apache.flume.sink.elasticsearch.ElasticSearchIndexRequestBuilderFactory. Implementing ElasticSearchEventSerializer is deprecated in favour of the more powerful ElasticSearchIndexRequestBuilderFactory.
+
+默认情况下，`ElasticSearchLogStashEventSerializer` 为 elasticsearch 序列化事件。这个行为可以用序列化器参数重写。这个参数接受 `org.apache.flume.sink.elasticsearch.ElasticSearchEventSerializer` 或 `org.apache.flume.sink.elasticsearch.ElasticSearchIndexRequestBuilderFactory` 的实现。实现 `ElasticSearchEventSerializer` 已被弃用，取而代之的是更强大的 `elasticsearchchindexrequestbuilderfactory`。
+
+> The type is the FQCN: org.apache.flume.sink.elasticsearch.ElasticSearchSink
+
+类型是 FQCN: org.apache.flume.sink.elasticsearch.ElasticSearchSink
+
+> Required properties are in bold.
+
+必需的属性以粗体显示。
+
+Property Name    |   Default   | 	Description
+---|:---|:---
+**channel**	     |      –	   |	
+**type**	     |      –	   |    The component type name, needs to be `org.apache.flume.sink.elasticsearch.ElasticSearchSink`【组件类型名称，必须是`org.apache.flume.sink.elasticsearch.ElasticSearchSink`】
+**hostNames**	 |      –	   |    Comma separated list of hostname:port, if the port is not present the default port ‘9300’ will be used 【hostname:port的逗号分隔的列表。如果列出端口，使用默认的端口9300】
+indexName	     |    flume	   |    The name of the index which the date will be appended to. Example `‘flume’ -> ‘flume-yyyy-MM-dd’` Arbitrary header substitution is supported, eg. %{header} replaces with value of named event header【数据将被添加到的索引的名字。】
+indexType	     |     logs	   |    The type to index the document to, defaults to ‘log’ Arbitrary header substitution is supported, eg. %{header} replaces with value of named event header 【为文档建立的索引的类型，默认是‘log’】
+clusterName	     |elasticsearch|	Name of the ElasticSearch cluster to connect to【连接的ES集群的名字】
+batchSize	     |     100	   |    Number of events to be written per txn.【每次事务中，写入的事件的数量】
+ttl	             |      –	   |    TTL in days, when set will cause the expired documents to be deleted automatically, if not set documents will never be automatically deleted. TTL is accepted both in the earlier form of integer only e.g. a1.sinks.k1.ttl = 5 and also with a qualifier ms (millisecond), s (second), m (minute), h (hour), d (day) and w (week). Example a1.sinks.k1.ttl = 5d will set TTL to 5 days. Follow http://www.elasticsearch.org/guide/reference/mapping/ttl-field/ for more information.【TTL以天为单位，设置时过期的文档会被自动删除，如果没有设置，则永远不会被自动删除。TTL只接受前面的整数形式，例如`a1.sinks.k1.ttl = 5 `，并且具有限定符ms(毫秒)，s(秒)，m(分钟)，h(小时)，d(天)和w(周)。例如`a1.sinks.k1.ttl = 5d`将ttl设置为5天。】
+serializer	| org.apache.flume.sink.elasticsearch.ElasticSearchLogStashEventSerializer	|The `ElasticSearchIndexRequestBuilderFactory` or `ElasticSearchEventSerializer` to use. Implementations of either class are accepted but `ElasticSearchIndexRequestBuilderFactory` is preferred.
+serializer.*	 |      –	  |     Properties to be passed to the serializer.
+
+> Note Header substitution is a handy to use the value of an event header to dynamically decide the indexName and indexType to use when storing the event. Caution should be used in using this feature as the event submitter now has control of the indexName and indexType. Furthermore, if the elasticsearch REST client is used then the event submitter has control of the URL path used.
+
+注：event header 的值来动态决定存储 event 时使用的 indexName 和 indexType，使用 Header 替换很方便。在使用此特性时应注意，因为 event 提交者现在拥有了对 indexName 和 indexType 的控制。此外，如果使用 elasticsearch REST 客户端，则 event 提交者可以控制所使用的 URL 路径。
+
+> Example for agent named a1:
+
+	a1.channels = c1
+	a1.sinks = k1
+	a1.sinks.k1.type = elasticsearch
+	a1.sinks.k1.hostNames = 127.0.0.1:9200,127.0.0.2:9300
+	a1.sinks.k1.indexName = foo_index
+	a1.sinks.k1.indexType = bar_type
+	a1.sinks.k1.clusterName = foobar_cluster
+	a1.sinks.k1.batchSize = 500
+	a1.sinks.k1.ttl = 5d
+	a1.sinks.k1.serializer = org.apache.flume.sink.elasticsearch.ElasticSearchDynamicSerializer
+	a1.sinks.k1.channel = c1
+
+## 12、Kite Dataset Sink
+
+## 13、Kafka Sink
+
+> This is a Flume Sink implementation that can publish data to a Kafka topic. One of the objective is to integrate Flume with Kafka so that pull based processing systems can process the data coming through various Flume sources.
+
+这是一个 Flume Sink 实现，可以将数据发布到 Kafka topic。其中一个目标是将 Flume 与 Kafka 集成在一起，这样基于 pull 的处理系统就可以处理来自各种 Flume 来源的数据。
+
+> This currently supports Kafka server releases 0.10.1.0 or higher. Testing was done up to 2.0.1 that was the highest avilable version at the time of the release.
+
+目前支持 Kafka 服务器版本 0.10.1.0 或更高版本。测试一直进行到 2.0.1，这是发行时的最高可用版本。
+
+> Required properties are marked in bold font.
+
+必需的属性用粗体标记。
+
+Property Name    |   Default   | 	Description
+---|:---|:---
+**type**	     |      –	   |    Must be set to `org.apache.flume.sink.kafka.KafkaSink`
+kafka.bootstrap.servers|–	   |    List of brokers Kafka-Sink will connect to, to get the list of topic partitions This can be a partial list of brokers, but we recommend at least two for HA. The format is comma separated list of hostname:port 【为获得topic分区的列表，要连接的kafka集群中的brokers列表。这可以是brokers的一部分的列表，但推荐至少两个，为了ha。格式是，逗号分隔的hostname:port列表】
+kafka.topic	     |default-flume-topic|The topic in Kafka to which the messages will be published. If this parameter is configured, messages will be published to this topic. If the event header contains a “topic” field, the event will be published to that topic overriding the topic configured here. Arbitrary header substitution is supported, eg. `%{header}` is replaced with value of event header named “header”. (If using the substitution, it is recommended to set “auto.create.topics.enable” property of Kafka broker to true.)【消息要发布到的kafka中的topic。如果配置了这个参数，消息将发布到这个topic。如果event header包含了topic字段，事件将被发布到到覆盖这里配置的topic的topic】
+flumeBatchSize   |	   100	   |    How many messages to process in one batch. Larger batches improve throughput while adding latency.【在一个批次中要处理的消息的数量。当增加了延迟，大的批次可以提供吞吐量】
+kafka.producer.acks|	1	   |    How many replicas must acknowledge a message before its considered successfully written. Accepted values are 0 (Never wait for acknowledgement), 1 (wait for leader only), -1 (wait for all replicas) Set this to -1 to avoid data loss in some cases of leader failure.【在消息被认为成功写入前，必须有多少个副本确认消息。可以接收的值有0：不等待确认；1：仅leader确认；-1：所有副本都等待。设为-1避免在leader故障的情况下丢失数据。】
+useFlumeEventFormat|  false	   |    By default events are put as bytes onto the Kafka topic directly from the event body. Set to true to store events as the Flume Avro binary format. Used in conjunction with the same property on the KafkaSource or with the parseAsFlumeEvent property on the Kafka Channel this will preserve any Flume headers for the producing side.【默认事件以字节形式直接从事件主体放入到kafka topic。设为true，以Flume Avro二进制格式保存事件。与KafkaSource上的相同属性一起使用，或者与Kafka Channel上的parseAsFlumeEvent属性一起使用，这将为产生端保留任何Flume头。】
+defaultPartitionId|     –	   |    Specifies a Kafka partition ID (integer) for all events in this channel to be sent to, unless overriden by `partitionIdHeader`. By default, if this property is not set, events will be distributed by the Kafka Producer’s partitioner - including by `key` if specified (or by a partitioner specified by `kafka.partitioner.class`).【对channel中要发送的所有事件，指定一个kafka分区id(整型)，除非被`partitionIdHeader`覆盖了。默认情况下，如果这个属性不设置，事件会被kafka的生产者的分区器分发：包括根据key（或者由`kafka.partitioner.class`指定的分区器）】
+partitionIdHeader |  	–	   |     When set, the sink will take the value of the field named using the value of this property from the event header and send the message to the specified partition of the topic. If the value represents an invalid partition, an EventDeliveryException will be thrown. If the header value is present then this setting overrides `defaultPartitionId`.【当设置时，sink将接受使用来自事件头的这个属性的值来命名字段的值，并发送消息到topic的指定的分区。如果值表示了一个无效的分区，将抛出EventDeliveryException。如果header值存在，这个设置将覆盖`defaultPartitionId`】
+allowTopicOverride|	  true	   |     When set, the sink will allow a message to be produced into a topic specified by the `topicHeader` property (if provided).【当设置时，sink将允许产生的消息进入由`topicHeader`属性指定的topic（如果提供的话）】
+topicHeader	      |   topic	   |     When set in conjunction with `allowTopicOverride` will produce a message into the value of the header named using the value of this property. Care should be taken when using in conjunction with the Kafka Source `topicHeader` property to avoid creating a loopback.【当设置和`allowTopicOverride`一起使用时，将产生的一个消息进入到header的值，使用这个属性的值命名。当与Kafka Source的“topicHeader”属性一起使用时，要小心避免创建一个环回。】
+kafka.producer.security.protocol|	PLAINTEXT  |  Set to `SASL_PLAINTEXT`, `SASL_SSL` or `SSL` if writing to Kafka using some level of security. See below for additional info on secure setup.【如果写入数据到kafka使用安全级别，可以设置为SASL_PLAINTEXT、SASL_SSL、SSL】
+more producer security props |	  |	If using `SASL_PLAINTEXT`, `SASL_SSL` or `SSL` refer to [Kafka security](http://kafka.apache.org/documentation.html#security) for additional properties that need to be set on producer.
+Other Kafka Producer Properties| 	–	 |  These properties are used to configure the Kafka Producer. Any producer property supported by Kafka can be used. The only requirement is to prepend the property name with the prefix `kafka.producer`. For example: `kafka.producer.linger.ms`【这些属性用来配置Kafka Producer，任意的kafka支持的producer属性可以被使用。仅有的要求是属性名字使用`kafka.producer`前缀，如`kafka.producer.linger.ms`】
+
+> Note Kafka Sink uses the `topic` and `key` properties from the FlumeEvent headers to send events to Kafka. If topic exists in the headers, the event will be sent to that specific topic, overriding the topic configured for the Sink. If key exists in the headers, the key will used by Kafka to partition the data between the topic partitions. Events with same key will be sent to the same partition. If the key is null, events will be sent to random partitions.
+
+Kafka Sink 使用来自 FlumeEvent headers 的 `topic` 和 `key` 属性来发送 events 到 Kafka。
+
+如果 header 中存在 topic，则 event 将发送到该指定的 topic，覆盖为 Sink 配置的 topic。
+
+如果 key 存在于 headers 中，那么这个 key 将被 Kafka 用来在 topic 分区之间划分数据。具有相同 key 的 Events 将被发送到相同的分区。如果 key 为空，events 将被发送到随机分区。
+
+> The Kafka sink also provides defaults for the key.serializer(org.apache.kafka.common.serialization.StringSerializer) and value.serializer(org.apache.kafka.common.serialization.ByteArraySerializer). Modification of these parameters is not recommended.
+
+Kafka sink 也为 `key.serializer` (`org.apache.kafka.common.serialization.StringSerializer`)和`value.serializer` (`org.apache.kafka.common.serialization.ByteArraySerializer`)提供了默认值。不建议修改这些参数。
+
+> Deprecated Properties
+
+Property Name    |   Default   | 	Description
+---|:---|:---
+brokerList	     |      –	   |    Use kafka.bootstrap.servers
+topic	         |default-flume-topic	|  Use kafka.topic
+batchSize	     |     100	   |    Use kafka.flumeBatchSize
+requiredAcks	 |      1	   |    Use kafka.producer.acks
+
+> An example configuration of a Kafka sink is given below. Properties starting with the prefix `kafka.producer` the Kafka producer. The properties that are passed when creating the Kafka producer are not limited to the properties given in this example. Also it is possible to include your custom properties here and access them inside the preprocessor through the Flume Context object passed in as a method argument.
+
+下面给出一个 Kafka sink 的配置示例。以 `kafka.producer` 前缀开始的属性。卡夫卡的制作人。在创建 Kafka 生产者时传递的属性并不局限于本例中给出的属性。也可以在这里包括你的自定义属性，并通过传入的 Flume 上下文对象作为方法参数在预处理器中访问它们。
+
+	a1.sinks.k1.channel = c1
+	a1.sinks.k1.type = org.apache.flume.sink.kafka.KafkaSink
+	a1.sinks.k1.kafka.topic = mytopic
+	a1.sinks.k1.kafka.bootstrap.servers = localhost:9092
+	a1.sinks.k1.kafka.flumeBatchSize = 20
+	a1.sinks.k1.kafka.producer.acks = 1
+	a1.sinks.k1.kafka.producer.linger.ms = 1
+	a1.sinks.k1.kafka.producer.compression.type = snappy
+
+### 13.1、Security and Kafka Sink:
+
+> Secure authentication as well as data encryption is supported on the communication channel between Flume and Kafka. For secure authentication SASL/GSSAPI (Kerberos V5) or SSL (even though the parameter is named SSL, the actual protocol is a TLS implementation) can be used from Kafka version 0.9.0.
+
+Flume 和 Kafka 之间的通信通道支持安全认证和数据加密。
+
+对于安全身份验证，可以在 Kafka 0.9.0 版本中使用 SASL/GSSAPI(Kerberos V5 )或 SSL(即使参数名为 SSL，实际的协议是 TLS 实现)。
+
+> As of now data encryption is solely provided by SSL/TLS.
+
+目前数据加密仅由 SSL/TLS 提供。
+
+> Setting `kafka.producer.security.protocol` to any of the following value means:
+
+设置 `kafka.producer.security.protocol` 为以下的任何一个值:
+
+- SASL_PLAINTEXT - Kerberos or plaintext authentication with no data encryption
+- SASL_SSL - Kerberos or plaintext authentication with data encryption
+- SSL - TLS based encryption with optional authentication.
+
+> Warning There is a performance degradation when SSL is enabled, the magnitude of which depends on the CPU type and the JVM implementation. Reference: [Kafka security overview](http://kafka.apache.org/documentation#security_overview) and the jira for tracking this issue: [KAFKA-2561](https://issues.apache.org/jira/browse/KAFKA-2561)
+
+当启用 SSL 时，性能会下降，下降程度取决于 CPU 类型和 JVM 实现。
+
+### 13.2、TLS and Kafka Sink:
+
+> Please read the steps described in [Configuring Kafka Clients SSL](http://kafka.apache.org/documentation#security_configclients) to learn about additional configuration settings for fine tuning for example any of the following: security provider, cipher suites, enabled protocols, truststore or keystore types.
+
+请阅读 Configuring Kafka Clients SSL 中描述的步骤，以了解额外的配置调优，例如以下的任何一个:安全提供者，加密套件，启用协议，信任存储或密钥存储类型。
+
+> Example configuration with server side authentication and data encryption.
+
+服务器端身份认证和数据加密的配置示例。
+
+	a1.sinks.sink1.type = org.apache.flume.sink.kafka.KafkaSink
+	a1.sinks.sink1.kafka.bootstrap.servers = kafka-1:9093,kafka-2:9093,kafka-3:9093
+	a1.sinks.sink1.kafka.topic = mytopic
+	a1.sinks.sink1.kafka.producer.security.protocol = SSL
+	# optional, the global truststore can be used alternatively
+	a1.sinks.sink1.kafka.producer.ssl.truststore.location = /path/to/truststore.jks
+	a1.sinks.sink1.kafka.producer.ssl.truststore.password = <password to access the truststore>
+
+> Specyfing the truststore is optional here, the global truststore can be used instead. For more details about the global SSL setup, see the SSL/TLS support section.
+
+在这里指定的 truststore 是可选的，可以使用全局 truststore。有关全局 SSL 设置的更多细节，请参见 SSL/TLS 支持部分。
+
+> Note: By default the property `ssl.endpoint.identification.algorithm` is not defined, so hostname verification is not performed. In order to enable hostname verification, set the following properties
+
+注意：默认情况下，不定义 ssl.endpoint.identification.algorithm 属性，所以不执行主机名验证。
+
+为了启用主机名验证，设置以下属性：
+
+	a1.sinks.sink1.kafka.producer.ssl.endpoint.identification.algorithm = HTTPS
+
+> Once enabled, clients will verify the server’s fully qualified domain name (FQDN) against one of the following two fields:
+
+一旦启用，客户端将根据以下两个字段之一验证服务器的完全限定域名(FQDN):
+
+- Common Name (CN) https://tools.ietf.org/html/rfc6125#section-2.3
+- Subject Alternative Name (SAN) https://tools.ietf.org/html/rfc5280#section-4.2.1.6
+
+> If client side authentication is also required then additionally the following needs to be added to Flume agent configuration or the global SSL setup can be used (see [SSL/TLS support](http://flume.apache.org/FlumeUserGuide.html#ssl-tls-support) section). Each Flume agent has to have its client certificate which has to be trusted by Kafka brokers either individually or by their signature chain. Common example is to sign each client certificate by a single Root CA which in turn is trusted by Kafka brokers.
+
+如果还需要客户端身份验证，那么还需要将以下内容添加到 Flume agent 配置中，或者可以使用全局 SSL 设置。
+
+每个 Flume agent 必须有自己的客户端证书，该证书必须被 Kafka brokers 单独或通过其签名链信任。
+
+常见的例子是通过一个被 Kafka brokers 信任的 Root CA 对每个客户端证书进行签名。
+
+	# optional, the global keystore can be used alternatively
+	a1.sinks.sink1.kafka.producer.ssl.keystore.location = /path/to/client.keystore.jks
+	a1.sinks.sink1.kafka.producer.ssl.keystore.password = <password to access the keystore>
+
+> If keystore and key use different password protection then ssl.key.password property will provide the required additional secret for producer keystore:
+
+如果 keystore 和 key 使用不同的密码保护，那么 ssl.key.password 属性将为两个消费者 keystores 提供所需的额外加密:
+
+	a1.sinks.sink1.kafka.producer.ssl.key.password = <password to access the key>
+
+### 13.3、Kerberos and Kafka Sink:
+
+> To use Kafka sink with a Kafka cluster secured with Kerberos, set the `producer.security.protocol` property noted above for producer. The Kerberos keytab and principal to be used with Kafka brokers is specified in a JAAS file’s “KafkaClient” section. “Client” section describes the Zookeeper connection if needed. See [Kafka doc](http://kafka.apache.org/documentation.html#security_sasl_clientconfig) for information on the JAAS file contents. The location of this JAAS file and optionally the system wide kerberos configuration can be specified via JAVA_OPTS in flume-env.sh:
+
+为了使用 Kerberos 安全保护的 Kafka 集群的 Kafka source，为消费者设置consumer.security.protocol 属性。
+
+与 Kafka broker 一起使用的 Kerberos keytab 和 principal 是在 JAAS 文件的 “kafkclient” 部分指定的。如果需要，“Client” 部分描述 Zookeeper 连接。
+
+可以通过 flume-env.sh 中的 JAVA_OPTS 指定这个 JAAS 文件的位置以及系统范围的 kerberos 配置(可选):
+
+	JAVA_OPTS="$JAVA_OPTS -Djava.security.krb5.conf=/path/to/krb5.conf"
+	JAVA_OPTS="$JAVA_OPTS -Djava.security.auth.login.config=/path/to/flume_jaas.conf"
+
+> Example secure configuration using SASL_PLAINTEXT:
+
+	a1.sinks.sink1.type = org.apache.flume.sink.kafka.KafkaSink
+	a1.sinks.sink1.kafka.bootstrap.servers = kafka-1:9093,kafka-2:9093,kafka-3:9093
+	a1.sinks.sink1.kafka.topic = mytopic
+	a1.sinks.sink1.kafka.producer.security.protocol = SASL_PLAINTEXT
+	a1.sinks.sink1.kafka.producer.sasl.mechanism = GSSAPI
+	a1.sinks.sink1.kafka.producer.sasl.kerberos.service.name = kafka
+
+> Example secure configuration using SASL_SSL:
+
+	a1.sinks.sink1.type = org.apache.flume.sink.kafka.KafkaSink
+	a1.sinks.sink1.kafka.bootstrap.servers = kafka-1:9093,kafka-2:9093,kafka-3:9093
+	a1.sinks.sink1.kafka.topic = mytopic
+	a1.sinks.sink1.kafka.producer.security.protocol = SASL_SSL
+	a1.sinks.sink1.kafka.producer.sasl.mechanism = GSSAPI
+	a1.sinks.sink1.kafka.producer.sasl.kerberos.service.name = kafka
+	# optional, the global truststore can be used alternatively
+	a1.sinks.sink1.kafka.producer.ssl.truststore.location = /path/to/truststore.jks
+	a1.sinks.sink1.kafka.producer.ssl.truststore.password = <password to access the truststore>
+
+> Sample JAAS file. For reference of its content please see client config sections of the desired authentication mechanism (GSSAPI/PLAIN) in Kafka documentation of [SASL configuration](http://kafka.apache.org/documentation#security_sasl_clientconfig). Unlike the Kafka Source or Kafka Channel a “Client” section is not required, unless it is needed by other connecting components. Also please make sure that the operating system user of the Flume processes has read privileges on the jaas and keytab files.
+
+JAAS 文件示例。
+
+因为 Kafka Source 或 Kafka Channel ，“Client” 部分不被要求。除非其他连接组件需要，
+
+另外，请确保 Flume 进程的操作系统用户对 jaas 和 keytab 文件有读取权限。
+
+	KafkaClient {
+	  com.sun.security.auth.module.Krb5LoginModule required
+	  useKeyTab=true
+	  storeKey=true
+	  keyTab="/path/to/keytabs/flume.keytab"
+	  principal="flume/flumehost1.example.com@YOURKERBEROSREALM";
+	};
+
+## 14、HTTP Sink
+
+> Behaviour of this sink is that it will take events from the channel, and send those events to a remote service using an HTTP POST request. The event content is sent as the POST body.
+
+该 sink 的行为是，它将从 channel 获取 events，并使用 HTTP POST 请求将这些 events 发送到远程服务。event 内容作为 POST 主体发送。
+
+> Error handling behaviour of this sink depends on the HTTP response returned by the target server. The sink backoff/ready status is configurable, as is the transaction commit/rollback result and whether the event contributes to the successful event drain count.
+
+此 sink 的错误处理行为取决于目标服务器返回的 HTTP 响应。sink 的接收回退/就绪状态是可配置的，事务提交/回滚结果，以及 event 是否有助于成功的 event 消耗计数也是可配置的。
+
+> Any malformed HTTP response returned by the server where the status code is not readable will result in a backoff signal and the event is not consumed from the channel.
+
+状态码不可读的服务器返回的任何格式错误的 HTTP 响应都会导致回退信号，并且不会从 channel 消费 event。
+
+> Required properties are in bold.
+
+必需的属性以粗体显示。
+
+Property Name    |   Default   | 	Description
+---|:---|:---
+**channel**	     |      –	   | 
+**type**	     |      –	   |    The component type name, needs to be `http`.【组件类型名称，必须是`http`】
+**endpoint**	 |      –	   |    The fully qualified URL endpoint to POST to【POST到的完整的限定URL端点】
+connectTimeout	 |     5000	   |    The socket connection timeout in milliseconds【socket连接超时时长，毫秒】
+requestTimeout	 |     5000	   |    The maximum request processing time in milliseconds【最大请求处理事件，毫秒】
+contentTypeHeader|	text/plain |	The HTTP Content-Type header
+acceptHeader	 |  text/plain |    The HTTP Accept header value
+defaultBackoff	 |     true	   |    Whether to backoff by default on receiving all HTTP status codes
+defaultRollback	 |     true	   |    Whether to rollback by default on receiving all HTTP status codes
+defaultIncrementMetrics|false  |	Whether to increment metrics by default on receiving all HTTP status codes
+backoff.CODE	 |       –	   |    Configures a specific backoff for an individual (i.e. 200) code or a group (i.e. 2XX) code
+rollback.CODE	 |       –	   |    Configures a specific rollback for an individual (i.e. 200) code or a group (i.e. 2XX) code
+incrementMetrics.CODE|	 –	   |    Configures a specific metrics increment for an individual (i.e. 200) code or a group (i.e. 2XX) code
+
+> Note that the most specific HTTP status code match is used for the backoff, rollback and incrementMetrics configuration options. If there are configuration values for both 2XX and 200 status codes, then 200 HTTP codes will use the 200 value, and all other HTTP codes in the 201-299 range will use the 2XX value.
+
+请注意，最特定的 HTTP 状态码匹配用于后退、回滚和 incrementMetrics 配置选项。如果 2XX 和 200 状态码都有配置值，那么 200 HTTP 代码将使用 200 值，而 201-299 范围内的所有其他 HTTP 代码将使用 2XX 值。
+
+> Any empty or null events are consumed without any request being made to the HTTP endpoint.
+
+使用任何空或 null events 时，不会向 HTTP 端点发出任何请求。
+
+Example for agent named a1:
+
+	a1.channels = c1
+	a1.sinks = k1
+	a1.sinks.k1.type = http
+	a1.sinks.k1.channel = c1
+	a1.sinks.k1.endpoint = http://localhost:8080/someuri
+	a1.sinks.k1.connectTimeout = 2000
+	a1.sinks.k1.requestTimeout = 2000
+	a1.sinks.k1.acceptHeader = application/json
+	a1.sinks.k1.contentTypeHeader = application/json
+	a1.sinks.k1.defaultBackoff = true
+	a1.sinks.k1.defaultRollback = true
+	a1.sinks.k1.defaultIncrementMetrics = false
+	a1.sinks.k1.backoff.4XX = false
+	a1.sinks.k1.rollback.4XX = false
+	a1.sinks.k1.incrementMetrics.4XX = true
+	a1.sinks.k1.backoff.200 = false
+	a1.sinks.k1.rollback.200 = false
+	a1.sinks.k1.incrementMetrics.200 = true
+
+## 15、Custom Sink
+
+> A custom sink is your own implementation of the Sink interface. A custom sink’s class and its dependencies must be included in the agent’s classpath when starting the Flume agent. The type of the custom sink is its FQCN. Required properties are in bold.
+
+自定义 sink 是你自己的 Sink 接口的实现。启动 Flume agent 时，自定义 sink 的类及其依赖项必须包含在 agent 的类路径中。
+
+自定义接收器的类型是它的 FQCN。
+
+必需的属性以粗体显示。
+
+Property Name    |   Default   | 	Description
+---|:---|:---
+**channel**	     |      –	   |
+**type**	     |      –	   |    The component type name, needs to be your FQCN
+
+> Example for agent named a1:
+
+	a1.channels = c1
+	a1.sinks = k1
+	a1.sinks.k1.type = org.example.MySink
+	a1.sinks.k1.channel = c1
