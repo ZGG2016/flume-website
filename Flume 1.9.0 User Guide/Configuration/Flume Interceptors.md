@@ -1,8 +1,10 @@
 # Flume Interceptors
 
+[TOC]
+
 > Flume has the capability to modify/drop events in-flight. This is done with the help of interceptors. Interceptors are classes that implement org.apache.flume.interceptor.Interceptor interface. An interceptor can modify or even drop events based on any criteria chosen by the developer of the interceptor. Flume supports chaining of interceptors. This is made possible through by specifying the list of interceptor builder class names in the configuration. Interceptors are specified as a whitespace separated list in the source configuration. The order in which the interceptors are specified is the order in which they are invoked. The list of events returned by one interceptor is passed to the next interceptor in the chain. Interceptors can modify or drop events. If an interceptor needs to drop events, it just does not return that event in the list that it returns. If it is to drop all events, then it simply returns an empty list. Interceptors are named components, here is an example of how they are created through configuration:
 
-Flume 能够在数据流转中修改/删除 events，这是 interceptors 的作用。
+Flume 能够**在数据流转中修改/删除 events**，这是 interceptors 的作用。
 
 Interceptors 是实现 org.apache.flume.interceptor 接口的类。
 
@@ -10,7 +12,7 @@ interceptor 可以根据开发人员选择的任何规则修改甚至删除 even
 
 Flume 支持 interceptors 链，通过在配置中指定 interceptor builder 类名列表实现的。
 
-Interceptors 在源配置中被指定为一个空格分隔的列表。指定的 Interceptors 的顺序就是调用它们的顺序。一个 interceptor 返回的 events 列表被传递给链中的下一个 events。
+Interceptors 在 source 配置中被指定为一个空格分隔的列表。**指定的 Interceptors 的顺序就是调用它们的顺序**。一个 interceptor 返回的 events 列表被传递给链中的下一个 interceptor。
 
 Interceptors 可以修改或删除 events。如果 interceptor 需要删除 events，它就不会在它返回的列表中返回该 events。如果要删除所有 events，则只返回一个空列表。
 
@@ -43,7 +45,7 @@ Interceptors 是命名组件，下面是一个通过配置创建它们的例子:
 
 这个 interceptor 插入到 event headers 中，它处理 event 的时间以毫秒为单位。
 
-这个 interceptor 插入一个带有 key `timestamp` 的 header(或由 `header` 属性指定的)，它的值是相关的时间戳。
+这个 interceptor **插入一个带有 key `timestamp` 的 header(或由 `header` 属性指定的)**，它的值是相关的时间戳。
 
 如果配置中已经存在一个时间戳，这个 interceptor 可以保留它一个已存在的时间戳。
 
@@ -66,7 +68,7 @@ preserveExisting |   false     |   If the timestamp already exists, should it be
 
 > This interceptor inserts the hostname or IP address of the host that this agent is running on. It inserts a header with key host or a configured key whose value is the hostname or IP address of the host, based on configuration.
 
-这个 interceptor 插入运行这个 agent 的主机的主机名或IP地址。
+这个 interceptor **插入运行这个 agent 的主机的主机名或IP地址**。
 
 它插入一个 header ，这个 header 带有 key `host` 或一个配置的 key ，该 key 的值是基于配置的主机的主机名或IP地址。
 
@@ -88,7 +90,7 @@ hostHeader       |   host      |   The header key to be used.
 
 > Static interceptor allows user to append a static header with static value to all events.
 
-静态 interceptor 允许用户为所有的 events 追加一个带有静态值的静态 header。
+静态 interceptor 允许用户**为所有的 events 追加一个带有静态值的静态 header**。
 
 > The current implementation does not allow specifying multiple headers at one time. Instead user might chain multiple static interceptors each defining one static header.
 
@@ -116,7 +118,7 @@ value            |	  value	   |    Static value that should be created【应该�
 
 > This interceptor manipulates Flume event headers, by removing one or many headers. It can remove a statically defined header, headers based on a regular expression or headers in a list. If none of these is defined, or if no header matches the criteria, the Flume events are not modified.
 
-这个 interceptor 通过删除一个或多个 headers 来操作 Flume event headers。
+这个 interceptor 通过**删除一个或多个 headers 来操作 Flume event headers**。
 
 它可以删除静态定义的 header、基于正则表达式的 header 或列表中的 header。如果这些都没有定义，或者没有 header 匹配规则，则不修改 Flume events。
 
@@ -134,7 +136,7 @@ matching	     |   –	       |    All the headers which names match this regular
 
 > This interceptor sets a universally unique identifier on all events that are intercepted. An example UUID is b5755073-77a9-43c1-8fad-b7a586fc1b97, which represents a 128-bit value.
 
-这个 interceptor 对所拦截的所有 events 设置一个通用唯一标识符。例如，UUID为:`b5755073-77a9-43c1-8fad-b7a586fc1b97`，表示一个 128 位值。
+这个 interceptor **对所拦截的所有 events 设置一个通用唯一标识符**。例如，UUID为:`b5755073-77a9-43c1-8fad-b7a586fc1b97`，表示一个 128 位值。
 
 > Consider using UUIDInterceptor to automatically assign a UUID to an event if no application level unique key for the event is available. It can be important to assign UUIDs to events as soon as they enter the Flume network; that is, in the first Flume Source of the flow. This enables subsequent deduplication of events in the face of replication and redelivery in a Flume network that is designed for high availability and high performance. If an application level key is available, this is preferable over an auto-generated UUID because it enables subsequent updates and deletes of event in data stores using said well known application level key.
 
@@ -190,7 +192,7 @@ morphlineId	     |     null	   |    Optional name used to identify a morphline i
 
 > This interceptor provides simple string-based search-and-replace functionality based on Java regular expressions. Backtracking / group capture is also available. This interceptor uses the same rules as in the Java Matcher.replaceAll() method.
 
-这个 interceptor 提供了简单的对字符串的基于 Java 正则表达式的搜索和替换功能。
+这个 interceptor 提供了简单的**对字符串的基于 Java 正则表达式的搜索和替换功能**。
 
 回溯/组捕获也可用。这个 interceptor 使用与 Java 的 `Matcher.replaceAll()` 方法相同的规则。
 
@@ -223,7 +225,7 @@ charset	         |    UTF-8	   |    The charset of the event body. Assumed by de
 
 > This interceptor filters events selectively by interpreting the event body as text and matching the text against a configured regular expression. The supplied regular expression can be used to include events or exclude events.
 
-该 interceptor 通过将 event body 解释为文本,并根据配置的正则表达式匹配文本，有选择地过滤 events。提供的正则表达式可用于包含 events 或排除 events。
+该 interceptor 通过将 event body 解释为文本，并**根据配置的正则表达式匹配文本，有选择地过滤 events**。提供的正则表达式可用于包含 events 或排除 events。
 
 Property Name    |   Default   | 	Description
 ---|:---|:---
@@ -235,7 +237,7 @@ excludeEvents	 |    false	   |    If true, regex determines events to exclude, o
 
 > This interceptor extracts regex match groups using a specified regular expression and appends the match groups as headers on the event. It also supports pluggable serializers for formatting the match groups before adding them as event headers.
 
-这个 interceptor 使用指定的正则表达式提取正则匹配组，并将匹配组附加为 event 的 headers。
+这个 interceptor **使用指定的正则表达式提取正则匹配组，并将匹配组附加为 event 的 headers**。
 
 它还支持可插入的序列化器，以便在将匹配组添加为 event headers 之前对它们进行格式化。
 
@@ -243,14 +245,14 @@ Property Name    |   Default   | 	Description
 ---|:---|:---
 **type**	    |      –	   |    The component type name has to be `regex_extractor` 【组件类型名称，必须是`regex_extractor`】
 **regex**	    |      –	   |    Regular expression for matching against events【匹配事件的正则表达式】
-**serializers**	|      –	   |    Space-separated list of serializers for mapping matches to header names and serializing their values. (See example below) Flume provides built-in support for the following serializers: `org.apache.flume.interceptor.RegexExtractorInterceptorPassThroughSerializer` `org.apache.flume.interceptor.RegexExtractorInterceptorMillisSerializer`
-`serializers.<s1>.type`  |  default  | Must be `default` (`org.apache.flume.interceptor.RegexExtractorInterceptorPassThroughSerializer`), `org.apache.flume.interceptor.RegexExtractorInterceptorMillisSerializer`, or the FQCN of a custom class that implements org.apache.flume.interceptor.RegexExtractorInterceptorSerializer
+**serializers**	|      –	   |    Space-separated list of serializers for mapping matches to header names and serializing their values. (See example below) Flume provides built-in support for the following serializers: `org.apache.flume.interceptor.RegexExtractorInterceptorPassThroughSerializer` `org.apache.flume.interceptor.RegexExtractorInterceptorMillisSerializer`【用空格分隔的序列化器列表，用于映射匹配头名称，并序列化它们的值。】
+`serializers.<s1>.type`  |  default  | Must be `default` (`org.apache.flume.interceptor.RegexExtractorInterceptorPassThroughSerializer`), `org.apache.flume.interceptor.RegexExtractorInterceptorMillisSerializer`, or the FQCN of a custom class that implements `org.apache.flume.interceptor.RegexExtractorInterceptorSerializer`
 `serializers.<s1>.name`  |  –	       |
 serializers.*	         |  –	       |   Serializer-specific properties
 
 > The serializers are used to map the matches to a header name and a formatted header value; by default, you only need to specify the header name and the default `org.apache.flume.interceptor.RegexExtractorInterceptorPassThroughSerializer` will be used. This serializer simply maps the matches to the specified header name and passes the value through as it was extracted by the regex. You can plug custom serializer implementations into the extractor using the fully qualified class name (FQCN) to format the matches in anyway you like.
 
-序列化器用于将匹配项映射到 header 名称和格式化的 header 值；
+**序列化器用于将匹配项映射到 header 名称和格式化的 header 值**；
 
 默认情况下，你只需要指定 header 名，然后使用默认的 `org.apache.flume.interceptor.RegexExtractorInterceptorPassThroughSerializer`。
 

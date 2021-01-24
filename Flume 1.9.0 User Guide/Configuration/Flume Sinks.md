@@ -138,7 +138,7 @@ hdfs.callTimeout   |     30000      |   Number of milliseconds allowed for HDFS 
 
 该 sink 将包含分隔文本或 JSON 数据的 events 直接流到 Hive 表或分区中。
 
-Events 是使用 Hive 事务写的。一旦一组事件提交给 Hive，它们就会立即对 Hive 查询可见。
+Events 是使用 Hive 事务写的。一旦一组 events 提交给 Hive，它们就会立即对 Hive 查询可见。
 
 flume 将流到的分区可以预先创建，或者，如果缺少分区，flume 也可以创建分区。
 
